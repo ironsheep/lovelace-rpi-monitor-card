@@ -58,8 +58,10 @@ If you don't use HACS please change the url accordingly.
 
 | Name             | Type   | Default       | Description                 |
 | ---------------- | ------ | ------------- | --------------------------- |
-| title            | string |  {sensor name}             | Common title                
+| title            | string |  {sensor name}             | Common title   
+| style       | string |  'glance' or 'full'             | Card layout desired for this RPi              
             
+We also epxect to have coloring thresholds for free-space and temperature (with reasonable defaults.)
 
 ## Credits
 
