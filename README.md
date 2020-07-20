@@ -17,7 +17,7 @@ This is a Lovelace card showing you the status of one of the Raspberry Pi's on y
 
 This card is currently in development.  Our design goal is that the cards (glance, large) should look like this:
 
-![Discovered by Home Assistant](./Docs/images/DesignGoal.png)
+![Planned Card Layouts](./DOCs/images/DesignGoal.png)
 
 
 
