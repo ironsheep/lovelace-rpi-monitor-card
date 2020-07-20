@@ -28,6 +28,18 @@ If you like my work and/or this has helped you in some way then feel free to hel
 [![coffee](https://www.buymeacoffee.com/assets/img/custom_images/black_img.png)](https://www.buymeacoffee.com/ironsheep)
 
 
+---
+
+-------------------- - - - - - - CAUTION -- CAUTION -- CAUTION - - - - - - --------------------
+
+WHILE THIS CARD IS NOT YET READY FOR USE. The following is beginning to appear here as we are building the card for you.
+
+Please be patient, this marker will be removed when the card is finally ready for use (_after we have a working version for you to use, of course._)
+
+-------------------- - - - - - - CAUTION -- CAUTION -- CAUTION - - - - - - --------------------
+
+---
+
 ## Installation
 
 Use [HACS](https://github.com/custom-components/hacs) (recommended)
