@@ -1,5 +1,5 @@
 {
-    "name": "Boilerplate Card",
+    "name": "RPi Monitor Card",
     "render_readme": true,
-    "filename": "boilerplate-card.js"
+    "filename": "rpi-monitor-card.js"
 }

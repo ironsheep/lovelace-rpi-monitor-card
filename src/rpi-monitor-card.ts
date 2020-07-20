@@ -12,7 +12,7 @@ import {
 
 import './editor';
 
-import { BoilerplateCardConfig } from './types';
+import { RPiMonitorCardConfig } from './types';
 import { actionHandler } from './action-handler-directive';
 import { CARD_VERSION } from './const';
 
@@ -20,23 +20,23 @@ import { localize } from './localize/localize';
 
 /* eslint no-console: 0 */
 console.info(
-  `%c  BOILERPLATE-CARD \n%c  ${localize('common.version')} ${CARD_VERSION}    `,
+  `%c  RPI-MONITOR-CARD \n%c  ${localize('common.version')} ${CARD_VERSION}    `,
   'color: orange; font-weight: bold; background: black',
   'color: white; font-weight: bold; background: dimgray',
 );
 
 (window as any).customCards = (window as any).customCards || [];
 (window as any).customCards.push({
-  type: 'boilerplate-card',
-  name: 'Boilerplate Card',
+  type: 'rpi-monitor-card',
+  name: 'RPi Monitor Card',
   description: 'A template custom card for you to create something awesome',
 });
 
 // TODO Name your custom element
-@customElement('boilerplate-card')
-export class BoilerplateCard extends LitElement {
+@customElement('rpi-monitor-card')
+export class RPiMonitorCard extends LitElement {
   public static async getConfigElement(): Promise<LovelaceCardEditor> {
-    return document.createElement('boilerplate-card-editor') as LovelaceCardEditor;
+    return document.createElement('rpi-monitor-card-editor') as LovelaceCardEditor;
   }
 
   public static getStubConfig(): object {
@@ -45,9 +45,9 @@ export class BoilerplateCard extends LitElement {
 
   // TODO Add any properities that should cause your element to re-render here
   @property() public hass!: HomeAssistant;
-  @property() private _config!: BoilerplateCardConfig;
+  @property() private _config!: RPiMonitorCardConfig;
 
-  public setConfig(config: BoilerplateCardConfig): void {
+  public setConfig(config: RPiMonitorCardConfig): void {
     // TODO Check for required fields and that they are of the proper format
     if (!config || config.show_error) {
       throw new Error(localize('common.invalid_configuration'));
@@ -58,7 +58,7 @@ export class BoilerplateCard extends LitElement {
     }
 
     this._config = {
-      name: 'Boilerplate',
+      name: 'RPi Monitor',
       ...config,
     };
   }
@@ -82,7 +82,7 @@ export class BoilerplateCard extends LitElement {
           hasDoubleClick: hasAction(this._config.double_tap_action),
         })}
         tabindex="0"
-        aria-label=${`Boilerplate: ${this._config.entity}`}
+        aria-label=${`RPiMonitor: ${this._config.entity}`}
       ></ha-card>
     `;
   }
