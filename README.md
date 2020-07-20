@@ -1,119 +1,69 @@
-# Boilerplate Card by [@iantrich](https://www.github.com/iantrich)
-
-A community driven boilerplate of best practices for Home Assistant Lovelace custom cards
-
-[![GitHub Release][releases-shield]][releases]
-[![License][license-shield]](LICENSE.md)
-[![hacs_badge](https://img.shields.io/badge/HACS-Default-orange.svg?style=for-the-badge)](https://github.com/custom-components/hacs)
+# Lovelace RPi Monitor Card
 
 ![Project Maintenance][maintenance-shield]
-[![GitHub Activity][commits-shield]][commits]
 
-[![Discord][discord-shield]][discord]
-[![Community Forum][forum-shield]][forum]
-
-## Support
-
-Hey dude! Help me out for a couple of :beers: or a :coffee:!
-
-[![coffee](https://www.buymeacoffee.com/assets/img/custom_images/black_img.png)](https://www.buymeacoffee.com/zJtVxUAgH)
-
-## Options
-
-| Name              | Type    | Requirement  | Description                                 | Default             |
-| ----------------- | ------- | ------------ | ------------------------------------------- | ------------------- |
-| type              | string  | **Required** | `custom:boilerplate-card`                   |
-| name              | string  | **Optional** | Card name                                   | `Boilerplate`       |
-| show_error        | boolean | **Optional** | Show what an error looks like for the card  | `false`             |
-| show_warning      | boolean | **Optional** | Show what a warning looks like for the card | `false`             |
-| entity            | string  | **Optional** | Home Assistant entity ID.                   | `none`              |
-| tap_action        | object  | **Optional** | Action to take on tap                       | `action: more-info` |
-| hold_action       | object  | **Optional** | Action to take on hold                      | `none`              |
-| double_tap_action | object  | **Optional** | Action to take on hold                      | `none`              |
-
-## Action Options
-
-| Name            | Type   | Requirement  | Description                                                                                                                            | Default     |
-| --------------- | ------ | ------------ | -------------------------------------------------------------------------------------------------------------------------------------- | ----------- |
-| action          | string | **Required** | Action to perform (more-info, toggle, call-service, navigate url, none)                                                                | `more-info` |
-| navigation_path | string | **Optional** | Path to navigate to (e.g. /lovelace/0/) when action defined as navigate                                                                | `none`      |
-| url             | string | **Optional** | URL to open on click when action is url. The URL will open in a new tab                                                                | `none`      |
-| service         | string | **Optional** | Service to call (e.g. media_player.media_play_pause) when action defined as call-service                                               | `none`      |
-| service_data    | object | **Optional** | Service data to include (e.g. entity_id: media_player.bedroom) when action defined as call-service                                     | `none`      |
-| haptic          | string | **Optional** | Haptic feedback for the [Beta IOS App](http://home-assistant.io/ios/beta) _success, warning, failure, light, medium, heavy, selection_ | `none`      |
-| repeat          | number | **Optional** | How often to repeat the `hold_action` in milliseconds.                                                                                 | `non`       |
-
-## Starting a new card from boilerplate-card
-
-### Step 1
-
-Clone this repository
-
-### Step 2
-
-Install necessary modules (verified to work in node 8.x)
-`yarn install` or `npm install`
+[![License][license-shield]](LICENSE)
 
 
-### Step 3
+If you have a number of Raspberry Pis on your network then this might be the card you need to setup your Dashboard for monitoring all of you RPi's.
 
-Do a test lint & build on the project. You can see available scripts in the package.json
-`npm run build`
+### Where to get the sensor software
 
-### Step 4
+Please visit my RPi Monitor project for the software needed to send the data to Home Assistant from each of your Raspberry Pi's. [See [RPi Reporter MQTT2HA Daemon](https://github.com/ironsheep/RPi-Reporter-MQTT2HA-Daemon).]
 
-Search the repository for all instances of "TODO" and handle the changes/suggestions
+## About this card
 
-### Step 5
+This is a Lovelace card showing you the status of one of the Raspberry Pi's on your network.  This card delivers a choice of smaller 'glance' style card or the large 'details' card.  You choose which you'd like for each of your RPi's.
 
-Customize to suit your needs and contribute it back to the community
+This card is currently in development.  Our design goal is that the cards (glance, large) should look like this:
+
+![Discovered by Home Assistant](./Docs/images/DesignGoal.png)
 
 
-## Starting a new card from boilerplate-card with [devcontainer][devcontainer]
 
-Note: this is available only in vscode ensure you have the [Remote Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) extension installed.
+------
 
-1. Fork and clone the repository.
-2. Open a [devcontainer][devcontainer] terminal and run `npm start` when it's ready.
-3. The compiled `.js` file will be accessible on
-   `http://127.0.0.1:5000/boilerplate-card.js`.
-4. On a running Home Assistant installation add this to your Lovelace
-   `resources:`
+If you like my work and/or this has helped you in some way then feel free to help me out for a couple of :coffee:'s or :pizza: slices!
+
+[![coffee](https://www.buymeacoffee.com/assets/img/custom_images/black_img.png)](https://www.buymeacoffee.com/ironsheep)
+
+
+## Installation
+
+Use [HACS](https://github.com/custom-components/hacs) (recommended)
+or download *lightning-detector-card.js* from our [Latest Release](https://github.com/ironsheep/lovelace-lightning-detector-card/releases/latest) and place it in your www directory.
+
+In your ui-lovelace.yaml (or resources.yaml, whichever you use for resources) add this:
 
 ```yaml
-- url: "http://127.0.0.1:5000/boilerplate-card.js"
+- url: /hacsfiles/lightning-detector-card/lightning-detector-card.js
   type: module
 ```
 
-_Change "127.0.0.1" to the IP of your development machine._
+If you don't use HACS please change the url accordingly.
 
-### Bonus
+## Config
 
-If you need a fresh test instance you can install a fresh Home Assistant instance inside the devcontainer as well.
+| Name             | Type   | Default       | Description                 |
+| ---------------- | ------ | ------------- | --------------------------- |
+| title            | string |  {sensor name}             | Common title                
+            
 
-1. Run the command `dc start`.
-2. Home Assistant will install and will eventually be running on port `9123`
+## Credits
 
-## [Troubleshooting](https://github.com/thomasloven/hass-config/wiki/Lovelace-Plugins)
-NB This will not work with node 9.x if you see the following errors try installing node 8.10.0
-```yarn install
-yarn install v1.3.2
-[1/4] 🔍  Resolving packages...
-warning rollup-plugin-commonjs@10.1.0: This package has been deprecated and is no longer maintained. Please use @rollup/plugin-commonjs.
-[2/4] 🚚  Fetching packages...
-error @typescript-eslint/eslint-plugin@2.6.0: The engine "node" is incompatible with this module. Expected version "^8.10.0 || ^10.13.0 || >=11.10.1".
-error Found incompatible module
-info Visit https://yarnpkg.com/en/docs/cli/install for documentation about this command.
-```
+- [iantrich](https://github.com/iantrich) for the card template and cards you've created which made my implementation effort much easier.
 
-[commits-shield]: https://img.shields.io/github/commit-activity/y/custom-cards/boilerplate-card.svg?style=for-the-badge
-[commits]: https://github.com/custom-cards/boilerplate-card/commits/master
-[devcontainer]: https://code.visualstudio.com/docs/remote/containers
-[discord]: https://discord.gg/5e9yvq
-[discord-shield]: https://img.shields.io/discord/330944238910963714.svg?style=for-the-badge
-[forum-shield]: https://img.shields.io/badge/community-forum-brightgreen.svg?style=for-the-badge
-[forum]: https://community.home-assistant.io/c/projects/frontend
-[license-shield]: https://img.shields.io/github/license/custom-cards/boilerplate-card.svg?style=for-the-badge
-[maintenance-shield]: https://img.shields.io/maintenance/yes/2019.svg?style=for-the-badge
-[releases-shield]: https://img.shields.io/github/release/custom-cards/boilerplate-card.svg?style=for-the-badge
-[releases]: https://github.com/custom-cards/boilerplate-card/releases
+
+## License
+
+Copyright © 2020 Iron Sheep Productions, LLC. All rights reserved.<br />
+Licensed under the MIT License. <br>
+<br>
+Follow these links for more information:
+
+### [Copyright](copyright) | [License](LICENSE)
+
+[maintenance-shield]: https://img.shields.io/badge/maintainer-S%20M%20Moraco%20%40ironsheepbiz-blue.svg?style=for-the-badge
+[license-shield]: https://camo.githubusercontent.com/bc04f96d911ea5f6e3b00e44fc0731ea74c8e1e9/68747470733a2f2f696d672e736869656c64732e696f2f6769746875622f6c6963656e73652f69616e74726963682f746578742d646976696465722d726f772e7376673f7374796c653d666f722d7468652d6261646765
+[releases-shield]: https://img.shields.io/github/release/ironsheep/lovelace-lightning-detector-card.svg?style=for-the-badge
+[releases]: https://github.com/ironsheep/lovelace-lightning-detector-card/releases
