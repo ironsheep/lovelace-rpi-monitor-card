@@ -1,6 +1,6 @@
 ---
 name: Bug report
-about: Create a report to help us improve
+about: Report an issue you are experiencing with the RPi Monitor Card
 title: ''
 labels: bug
 assignees: ''
