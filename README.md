@@ -6,7 +6,7 @@
 
 [![GitHub Release][releases-shield]][releases]
 
-![Release](https://github.com/ironsheep/lovelace-lightning-detector-card/workflows/Release/badge.svg)
+![Release](https://github.com/ironsheep/lovelace-rpi-monitor-card/workflows/Release/badge.svg)
 
 If you have a number of Raspberry Pis on your network then this might be the card you need to setup your Dashboard for monitoring all of you RPi's.
 
@@ -43,12 +43,12 @@ We are also still working on minor display issues...
 ## Installation
 
 Use [HACS](https://github.com/custom-components/hacs) (recommended)
-or download _lightning-detector-card.js_ from our [Latest Release](https://github.com/ironsheep/lovelace-lightning-detector-card/releases/latest) and place it in your www directory.
+or download _rpi-monitor-card.js_ from our [Latest Release](https://github.com/ironsheep/lovelace-rpi-monitor-card/releases/latest) and place it in your www directory.
 
 In your ui-lovelace.yaml (or resources.yaml, whichever you use for resources) add this:
 
 ```yaml
-- url: /hacsfiles/lightning-detector-card/lightning-detector-card.js
+- url: /hacsfiles/rpi-monitor-card/rpi-monitor-card.js
   type: module
 ```
 
@@ -68,13 +68,44 @@ If you don't use HACS please change the url accordingly.
 
 We also epxect to have coloring thresholds for free-space and temperature (with reasonable defaults.)
 
-## Severity Options
+### Severity Options
 
 | Name  | Type   | Default      | Description                                             |
 | ----- | ------ | ------------ | ------------------------------------------------------- |
 | from  | number | **Required** | Defines from which value the color should be displayed. |
 | to    | number | **Required** | Defines to which value the color should be displayed.   |
 | color | array  | **Required** | Defines the color to be displayed.                      |
+
+### Example card specifications
+
+A 'glance' card example
+
+```yaml
+type: 'custom:rpi-monitor-card'
+entity: sensor.rpi-monitor-fqdn
+card_style: glance
+temp_scale: f
+
+```
+
+A 'full' card example
+
+```yaml
+type: 'custom:rpi-monitor-card'
+entity: sensor.rpi-monitor-fqdn
+card_style: full
+temp_scale: C
+fs_severity:
+  - color: Green
+    from: 0
+    to: 25
+  - color: Orange
+    from: 26
+    to: 50
+  - color: Red
+    from: 51
+    to: 100
+```
 
 ## Credits
 

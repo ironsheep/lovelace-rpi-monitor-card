@@ -36,7 +36,7 @@ console.info(
   description: 'A template custom card for you to create something awesome',
 });
 
-// TODO Name your custom element
+// Name our custom element
 @customElement('rpi-monitor-card')
 export class RPiMonitorCard extends LitElement {
   public static async getConfigElement(): Promise<LovelaceCardEditor> {
@@ -47,7 +47,7 @@ export class RPiMonitorCard extends LitElement {
     return {};
   }
 
-  // TODO Add any properities that should cause your element to re-render here
+  // Properities that should cause your element to re-render here
   @property() public hass!: HomeAssistant;
   @property() private _config!: RPiMonitorCardConfig;
 
@@ -57,7 +57,7 @@ export class RPiMonitorCard extends LitElement {
   private _useFullCard: boolean = false;
   private _tempsInC: boolean = true;
   private _updateTimerID: NodeJS.Timeout | undefined;
-
+  private _hostname: string = '';
   private kREPLACE_WITH_TEMP_UNITS: string = 'replace-with-temp-units';
   //
   // FULL-SIZE CARD tables
@@ -182,10 +182,8 @@ export class RPiMonitorCard extends LitElement {
       ...config,
     };
 
-    this._interpretConfigToCardControls();
-
-    console.log('- config:');
-    console.log(this._config);
+    //console.log('- config:');
+    //console.log(this._config);
 
     this._updateSensorAvailability();
   }
@@ -201,7 +199,6 @@ export class RPiMonitorCard extends LitElement {
     this._updateSensorAvailability();
 
     if (changedProps.has('_config')) {
-      this._interpretConfigToCardControls();
       return true;
     }
 
@@ -218,7 +215,7 @@ export class RPiMonitorCard extends LitElement {
   }
 
   protected render(): TemplateResult | void {
-    // TODO Check for stateObj or other necessary things and render a warning if missing
+    // Check for stateObj or other necessary things and render a warning if missing
     if (this._config.show_warning) {
       return this.showWarning(localize('common.show_warning'));
     }
@@ -322,8 +319,8 @@ export class RPiMonitorCard extends LitElement {
       this._stopCardRefreshTimer();
     }
 
-    console.log('- changed Props: ');
-    console.log(changedProps);
+    //console.log('- changed Props: ');
+    //console.log(changedProps);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const root: any = this.shadowRoot;
@@ -333,9 +330,16 @@ export class RPiMonitorCard extends LitElement {
       for (const currName in this._cardFullCssIDs) {
         const currLabelID = this._cardFullCssIDs[currName];
         const currAttrKey = this._cardFullElements[currName];
+        const rawValue = this._getAttributeValueForKey(currAttrKey);
         const latestValue = this._getFullCardValueForAttributeKey(currAttrKey);
         const labelElement = root.getElementById(currLabelID);
         labelElement.textContent = latestValue;
+        if (currAttrKey == Constants.RPI_FS_USED_PERCENT_KEY) {
+          const color = this._computeFileSystemUsageColor(rawValue);
+          if (color != '') {
+            labelElement.style.setProperty('color', color);
+          }
+        }
       }
     } else {
       // update our GLANCE card
@@ -411,17 +415,33 @@ export class RPiMonitorCard extends LitElement {
 
   private _interpretConfigToCardControls(): void {
     // setup our card control vars based on latest config values...
+    const initialFullValue = this._useFullCard;
     if (this._config.card_style == undefined || this._config.card_style.toLocaleLowerCase() == 'full') {
       this._useFullCard = true;
     } else {
       this._useFullCard = false;
     }
+    if (initialFullValue != this._useFullCard) {
+      this._logChangeMessage('* CHANGE _useFullCard now: ' + this._useFullCard);
+    }
 
+    const initialTempValue = this._tempsInC;
     if (this._config.temp_scale == undefined || this._config.temp_scale.toLocaleLowerCase() == 'C') {
       this._tempsInC = true;
     } else {
       this._tempsInC = false;
     }
+    if (initialTempValue != this._tempsInC) {
+      this._logChangeMessage('* CHANGE _tempsInC now: ' + this._tempsInC);
+    }
+  }
+
+  private _logChangeMessage(message: string): void {
+    if (this._hostname == '') {
+      this._hostname = this._getAttributeValueForKey(Constants.RPI_HOST_NAME_KEY);
+    }
+    const logMessage = '(' + this._hostname + '): ' + message;
+    console.log(logMessage);
   }
 
   private _updateSensorAvailability(): void {
@@ -444,7 +464,10 @@ export class RPiMonitorCard extends LitElement {
       availChanged = true; // force output in this case
     }
     if (availChanged) {
-      console.log('* SENSOR available: ' + this._sensorAvailable);
+      this._logChangeMessage('* SENSOR available: ' + this._sensorAvailable);
+    }
+    if (this._sensorAvailable) {
+      this._interpretConfigToCardControls();
     }
   }
 
@@ -461,10 +484,80 @@ export class RPiMonitorCard extends LitElement {
     return desiredIconName;
   }
 
-  private _computeSeverityColor(value: string): unknown {
+  /*
+   *  COLORING Goals (default)
+   *
+   *  1) color  time since reported:  yellow if longer than 1 reporting interval, red if two or more
+   *  2) color space-used: nothing to 60%, 61-85% yellow, 86%+ red
+   *  3) color temp: nothing to 59C, 60-79C yellow, 80C+ red
+   */
+
+  // coloring for used space
+  private _colorUsedSpaceDefault = [
+    {
+      color: 'undefined',
+      from: 0,
+      to: 59,
+    },
+    {
+      color: 'yellow',
+      from: 60,
+      to: 84,
+    },
+    {
+      color: 'red',
+      from: 85,
+      to: 100,
+    },
+  ];
+
+  // coloring for temp-in-C
+  private _colorTemperatureDefault = [
+    {
+      color: 'undefined',
+      from: 0,
+      to: 59,
+    },
+    {
+      color: 'yellow',
+      from: 60,
+      to: 79,
+    },
+    {
+      color: 'red',
+      from: 85,
+      to: 100,
+    },
+  ];
+
+  // coloring for temp-in-C
+  private _colorReportPeriodsAgoDefault = [
+    {
+      color: 'undefined',
+      from: 0,
+      to: 0,
+    },
+    {
+      color: 'yellow',
+      from: 1,
+      to: 1,
+    },
+    {
+      color: 'red',
+      from: 2,
+      to: 100,
+    },
+  ];
+
+  private _computeFileSystemUsageColor(value: string): unknown {
     const config = this._config;
     const numberValue = Number(value);
-    const sections = config.severity;
+    const sections = config.fs_severity ? config.fs_severity : this._colorUsedSpaceDefault;
+
+    console.log('color-table: sections=');
+    console.log(sections);
+    return '';
+
     let color: undefined | string;
 
     if (isNaN(numberValue)) {
@@ -481,14 +574,23 @@ export class RPiMonitorCard extends LitElement {
       });
     }
 
-    // FIXME: UNDONE we don't have a config.color!!!!
-    if (color == undefined) color = config.color;
+    // FIXME: UNDONE we don't have a config.color so return empty-string!!!!
+    if (color == undefined) color = '';
     return color;
   }
 
   private _getAttributeValueForKey(key: string): string {
     // HELPER UTILITY: get requested named value from config
+    if (!this.hass || !this._config) {
+      return '';
+    }
+    const entityId = this._config.entity ? this._config.entity : undefined;
     const stateObj = this._config.entity ? this.hass.states[this._config.entity] : undefined;
+
+    if (!entityId && !stateObj) {
+      return '';
+    }
+
     let desired_value: string = ''; // empty string
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     if (key in stateObj?.attributes!) {
