@@ -4,6 +4,10 @@
 
 [![License][license-shield]](LICENSE)
 
+[![GitHub Release][releases-shield]][releases]
+
+![Release](https://github.com/ironsheep/lovelace-lightning-detector-card/workflows/Release/badge.svg)
+
 If you have a number of Raspberry Pis on your network then this might be the card you need to setup your Dashboard for monitoring all of you RPi's.
 
 ## Where to get the sensor software
@@ -14,7 +18,7 @@ Software supporting this card which sends data to Home Assistant from each of yo
 
 This is a Lovelace card showing you the status of one of the Raspberry Pi's on your network. This card offers a choice of smaller 'glance' style card or the large 'details' card. You choose which you'd like for each of your RPi's.
 
-This card is currently in development. Our design goal is that the cards (glance, large) should look like this:
+This card is currently in development. Our design goal is that the cards (glance, full) should look like this: (shown using 'Dark Orange' theme)
 
 ![Planned Card Layouts](./DOCs/images/DesignGoal.png)
 
@@ -28,9 +32,9 @@ If you like my work and/or this has helped you in some way then feel free to hel
 
 -------------------- - - - - - - CAUTION -- CAUTION -- CAUTION - - - - - - --------------------
 
-WHILE THIS CARD IS NOT YET READY FOR USE. The following is beginning to appear here as we are building the card for you.
+Cards are functional but alert coloring not yet working... we are in alpha until we get to funcitonal complete.  See releases for card you can test now! Once we release we will submit to HACS as well...
 
-Please be patient, this marker will be removed when the card is finally ready for use (_after we have a working version for you to use, of course._)
+We are also still working on minor display issues...
 
 -------------------- - - - - - - CAUTION -- CAUTION -- CAUTION - - - - - - --------------------
 
@@ -87,5 +91,5 @@ Follow these links for more information:
 
 [maintenance-shield]: https://img.shields.io/badge/maintainer-S%20M%20Moraco%20%40ironsheepbiz-blue.svg?style=for-the-badge
 [license-shield]: https://camo.githubusercontent.com/bc04f96d911ea5f6e3b00e44fc0731ea74c8e1e9/68747470733a2f2f696d672e736869656c64732e696f2f6769746875622f6c6963656e73652f69616e74726963682f746578742d646976696465722d726f772e7376673f7374796c653d666f722d7468652d6261646765
-[releases-shield]: https://img.shields.io/github/release/ironsheep/lovelace-lightning-detector-card.svg?style=for-the-badge
-[releases]: https://github.com/ironsheep/lovelace-lightning-detector-card/releases
+[releases-shield]: https://img.shields.io/github/release/ironsheep/lovelace-rpi-monitor-card.svg?style=for-the-badge
+[releases]: https://github.com/ironsheep/lovelace-rpi-monitor-card/releases

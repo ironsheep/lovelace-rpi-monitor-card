@@ -1,4 +1,4 @@
-export const CARD_VERSION = '0.1.0';
+export const CARD_VERSION = '0.2.0';
 
 /*
 {
@@ -41,14 +41,12 @@ export const RPI_NIX_VERSION_KEY = 'ux_version';
 export const RPI_LAST_UPDATE_KEY = 'last_update';
 export const RPI_UP_TIME_KEY = 'up_time';
 export const RPI_FS_TOTAL_GB_KEY = 'fs_total_gb';
-export const RPI_FS_FREE_PERCENT_KEY = 'fs_free_prcnt';
+export const RPI_FS_USED_PERCENT_KEY = 'fs_free_prcnt';
 export const RPI_NETWORKING_KEY = 'networking';
 export const RPI_TEMPERATURE_IN_C_KEY = 'temperature_c';
 export const RPI_SCRIPT_VER_KEY = 'reporter';
 
 export const SHOW_OS_PARTS_VALUE = 'show-os-parts';
-export const SHOW_TIME_SINCE_VALUE = 'show-reported-timesince';
-export const SHOW_TEMP_SCALE_KEY = 'show-temp-scale';
 
 export const RPI_IP_NTWK_KEY = 'IP';
 export const RPI_MAC_NTWK_KEY = 'mac';

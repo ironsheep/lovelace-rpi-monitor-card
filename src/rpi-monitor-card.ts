@@ -3,6 +3,7 @@ import { LitElement, html, customElement, property, CSSResult, TemplateResult, c
 import {
   HomeAssistant,
   hasConfigOrEntityChanged,
+  applyThemesOnElement,
   computeStateDisplay,
   relativeTime,
   hasAction,
@@ -58,25 +59,61 @@ export class RPiMonitorCard extends LitElement {
   private _updateTimerID: NodeJS.Timeout | undefined;
 
   private kREPLACE_WITH_TEMP_UNITS: string = 'replace-with-temp-units';
-
+  //
+  // FULL-SIZE CARD tables
+  //
   private _cardFullElements = {
     // top to bottom
     Storage: Constants.RPI_FS_TOTAL_GB_KEY,
-    'Storage Use': Constants.RPI_FS_FREE_PERCENT_KEY,
+    'Storage Use': Constants.RPI_FS_USED_PERCENT_KEY,
     Updated: Constants.RPI_LAST_UPDATE_KEY,
     Temperature: Constants.RPI_TEMPERATURE_IN_C_KEY,
     'Up-time': Constants.RPI_UP_TIME_KEY,
     OS: Constants.SHOW_OS_PARTS_VALUE,
     Model: Constants.RPI_MODEL_KEY,
     Interfaces: Constants.RPI_INTERFACES_KEY,
-    Reported: Constants.SHOW_TIME_SINCE_VALUE,
   };
+  private _cardFullIconNames = {
+    // top to bottom
+    Storage: 'sd',
+    'Storage Use': 'file-percent',
+    Updated: 'update',
+    Temperature: 'thermometer',
+    'Up-time': 'clock-check-outline',
+    OS: 'linux',
+    Model: 'raspberry-pi',
+    Interfaces: '',
+  };
+
+  private kClassIdFSAvail = 'fs-percent';
+  private kClassIdFSTotal = 'fs-total';
+  private kClassIdSysTemp = 'sys-temp';
+  private kClassIdUptime = 'up-time';
+  private kClassIdUpdated = 'last-update';
+  private kClassIdOS = '*nix';
+  private kClassIdRPiModel = 'rpi-model';
+  private kClassIdInterfaces = 'rpi-ifaces';
+
+  private _cardFullCssIDs = {
+    // top to bottom
+    Storage: this.kClassIdFSTotal,
+    'Storage Use': this.kClassIdFSAvail,
+    Updated: this.kClassIdUpdated,
+    Temperature: this.kClassIdSysTemp,
+    'Up-time': this.kClassIdUptime,
+    OS: this.kClassIdOS,
+    Model: this.kClassIdRPiModel,
+    Interfaces: this.kClassIdInterfaces,
+  };
+  //
+  // GLANCE CARD tables
+  //
   private _cardGlanceElements = {
     // left to right
-    '%': Constants.RPI_FS_FREE_PERCENT_KEY,
+    '%': Constants.RPI_FS_USED_PERCENT_KEY,
     GB: Constants.RPI_FS_TOTAL_GB_KEY,
     'replace-with-temp-units': Constants.RPI_TEMPERATURE_IN_C_KEY,
-    '-Up-': Constants.RPI_UP_TIME_KEY,
+    UpTime: Constants.RPI_UP_TIME_KEY,
     Upd: Constants.RPI_LAST_UPDATE_KEY,
   };
   private _cardGlanceIconNames = {
@@ -84,8 +121,29 @@ export class RPiMonitorCard extends LitElement {
     '%': 'file-percent',
     GB: 'sd',
     'replace-with-temp-units': 'thermometer',
-    '-Up-': 'clock-check-outline',
+    UpTime: 'clock-check-outline',
     Upd: 'update',
+  };
+
+  private _cardGlanceCssIDs = {
+    // left to right
+    '%': this.kClassIdFSAvail,
+    GB: this.kClassIdFSTotal,
+    'replace-with-temp-units': this.kClassIdSysTemp,
+    UpTime: this.kClassIdUptime,
+    Upd: this.kClassIdUpdated,
+  };
+
+  private _circleIconsValueByName = {
+    'circle-outline': 0,
+    'circle-slice-1': 13,
+    'circle-slice-2': 25,
+    'circle-slice-3': 38,
+    'circle-slice-4': 50,
+    'circle-slice-5': 63,
+    'circle-slice-6': 75,
+    'circle-slice-7': 88,
+    'circle-slice-8': 100,
   };
 
   public setConfig(config: RPiMonitorCardConfig): void {
@@ -99,11 +157,6 @@ export class RPiMonitorCard extends LitElement {
       if (styleValue != 'full' && styleValue != 'glance') {
         console.log('Invalid configuration. INVALID card_style = [' + config.card_style + ']');
         throw new Error('Illegal card_style: value [card_style:' + config.card_style + ']');
-      }
-      // TEMPORARY
-      if (styleValue == 'full') {
-        console.log('UNSUPPORTED configuration. card_style = [' + config.card_style + ']');
-        throw new Error('UNSUPPORTED card_style: value [card_style:' + config.card_style + ']');
       }
     }
 
@@ -129,17 +182,7 @@ export class RPiMonitorCard extends LitElement {
       ...config,
     };
 
-    if (this._config.card_style == undefined || this._config.card_style.toLocaleLowerCase() == 'full') {
-      this._useFullCard = true;
-    } else {
-      this._useFullCard = false;
-    }
-
-    if (this._config.temp_scale == undefined || this._config.temp_scale.toLocaleLowerCase() == 'C') {
-      this._tempsInC = true;
-    } else {
-      this._tempsInC = false;
-    }
+    this._interpretConfigToCardControls();
 
     console.log('- config:');
     console.log(this._config);
@@ -149,7 +192,7 @@ export class RPiMonitorCard extends LitElement {
 
   public getCardSize(): number {
     // adjust this based on glance or full card type
-    return 6;
+    return this._useFullCard == true ? 6 : 1;
   }
 
   protected shouldUpdate(changedProps: PropertyValues): boolean {
@@ -158,6 +201,7 @@ export class RPiMonitorCard extends LitElement {
     this._updateSensorAvailability();
 
     if (changedProps.has('_config')) {
+      this._interpretConfigToCardControls();
       return true;
     }
 
@@ -186,8 +230,6 @@ export class RPiMonitorCard extends LitElement {
       return this.showWarning('Entity Unavailable');
     }
 
-    let needCardRegeneration = false;
-
     if (this._firstTime) {
       console.log('- stateObj:');
       console.log(stateObj);
@@ -196,10 +238,6 @@ export class RPiMonitorCard extends LitElement {
       // FIXME: UNDONE remember to clear this interval when entity NOT avail. and restore when comes avail again...
       this._startCardRefreshTimer();
 
-      // get card type and eval if change!
-
-      needCardRegeneration = true;
-
       console.log('- 1st-time _config:');
       console.log(this._config);
       this._firstTime = false;
@@ -207,14 +245,12 @@ export class RPiMonitorCard extends LitElement {
 
     const cardName = 'RPi monitor ' + this._getAttributeValueForKey(Constants.RPI_FQDN_KEY);
 
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const stateStrInterp = computeStateDisplay(this.hass?.localize, stateObj!, this.hass?.language);
-    const relativeInterp =
-      stateStrInterp === undefined ? '{unknown}' : relativeTime(new Date(stateStrInterp), this.hass?.localize);
-    const card_timestamp_value = this._sensorAvailable ? relativeInterp : '{unknown}';
+    const card_timestamp_value = this._getRelativeTimeSinceUpdate();
 
     if (this._useFullCard) {
       // our FULL card
+      const fullRows = this._generateFullsizeCardRows();
+
       return html`
         <ha-card
           .header=${cardName}
@@ -225,11 +261,16 @@ export class RPiMonitorCard extends LitElement {
           })}
           tabindex="0"
           aria-label=${cardName}
-        ></ha-card>
+        >
+          <div id="states" class="card-content">
+            ${fullRows}
+            <div id="card-timestamp" class="last-heard-full">${card_timestamp_value}</div>
+          </div>
+        </ha-card>
       `;
     } else {
       // our GLANCE card
-      const glanceRows = this._generateGlanceRows();
+      const glanceRows = this._generateGlanceCardRows();
 
       return html`
         <ha-card
@@ -251,6 +292,66 @@ export class RPiMonitorCard extends LitElement {
     }
   }
 
+  private _getRelativeTimeSinceUpdate(): string {
+    const stateObj = this._config.entity ? this.hass.states[this._config.entity] : undefined;
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const stateStrInterp = computeStateDisplay(this.hass?.localize, stateObj!, this.hass?.language);
+    const relativeInterp =
+      stateStrInterp === undefined ? '{unknown}' : relativeTime(new Date(stateStrInterp), this.hass?.localize);
+    const desiredValue = this._sensorAvailable ? relativeInterp : '{unknown}';
+    return desiredValue;
+  }
+
+  // Here we need to refresh the rings and titles after it has been initially rendered
+  protected updated(changedProps): void {
+    if (!this._config) {
+      return;
+    }
+
+    // update cards' theme if changed
+    if (this.hass) {
+      const oldHass = changedProps.get('hass');
+      if (!oldHass || oldHass.themes !== this.hass.themes) {
+        applyThemesOnElement(this, this.hass.themes, this._config.theme);
+      }
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const stateObj = this.hass!.states[this._config.entity!];
+    if (!stateObj) {
+      this._stopCardRefreshTimer();
+    }
+
+    console.log('- changed Props: ');
+    console.log(changedProps);
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const root: any = this.shadowRoot;
+
+    if (this._useFullCard) {
+      // update our FULL card
+      for (const currName in this._cardFullCssIDs) {
+        const currLabelID = this._cardFullCssIDs[currName];
+        const currAttrKey = this._cardFullElements[currName];
+        const latestValue = this._getFullCardValueForAttributeKey(currAttrKey);
+        const labelElement = root.getElementById(currLabelID);
+        labelElement.textContent = latestValue;
+      }
+    } else {
+      // update our GLANCE card
+      for (const currName in this._cardGlanceCssIDs) {
+        const currLabelID = this._cardGlanceCssIDs[currName];
+        const currAttrKey = this._cardGlanceElements[currName];
+        let latestValue = this._getAttributeValueForKey(currAttrKey);
+        if (currName == 'Upd') {
+          latestValue = this._getUIDateForTimestamp(latestValue);
+        }
+        const labelElement = root.getElementById(currLabelID);
+        labelElement.textContent = latestValue;
+      }
+    }
+  }
+
   private _handleAction(ev: ActionHandlerEvent): void {
     if (this.hass && this._config && ev.detail.action) {
       handleAction(this, this.hass, this._config, ev.detail.action);
@@ -258,12 +359,14 @@ export class RPiMonitorCard extends LitElement {
   }
 
   private showWarning(warning: string): TemplateResult {
+    // generate a warning message for use in card
     return html`
       <hui-warning>${warning}</hui-warning>
     `;
   }
 
   private showError(error: string): TemplateResult {
+    // display an error card
     const errorCard = document.createElement('hui-error-card') as LovelaceCard;
     errorCard.setConfig({
       type: 'error',
@@ -295,16 +398,29 @@ export class RPiMonitorCard extends LitElement {
     //
     //  timestamp portion of card
     //
-    const root: any = this.shadowRoot;
-    const stateObj = this._config.entity ? this.hass.states[this._config.entity] : undefined;
-    if (stateObj != undefined) {
-      const labelElement = root.getElementById('card-timestamp');
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const stateStrInterp = computeStateDisplay(this.hass?.localize, stateObj!, this.hass?.language);
-      const relativeInterp =
-        stateStrInterp === undefined ? '{unknown}' : relativeTime(new Date(stateStrInterp), this.hass?.localize);
-      const newLabel = this._sensorAvailable ? relativeInterp : '{unknown}';
-      labelElement.textContent = newLabel;
+    if (this._useFullCard == false) {
+      const root: any = this.shadowRoot;
+      const stateObj = this._config.entity ? this.hass.states[this._config.entity] : undefined;
+      if (stateObj != undefined) {
+        const labelElement = root.getElementById('card-timestamp');
+        const card_timestamp_value = this._getRelativeTimeSinceUpdate();
+        labelElement.textContent = card_timestamp_value;
+      }
+    }
+  }
+
+  private _interpretConfigToCardControls(): void {
+    // setup our card control vars based on latest config values...
+    if (this._config.card_style == undefined || this._config.card_style.toLocaleLowerCase() == 'full') {
+      this._useFullCard = true;
+    } else {
+      this._useFullCard = false;
+    }
+
+    if (this._config.temp_scale == undefined || this._config.temp_scale.toLocaleLowerCase() == 'C') {
+      this._tempsInC = true;
+    } else {
+      this._tempsInC = false;
     }
   }
 
@@ -332,6 +448,19 @@ export class RPiMonitorCard extends LitElement {
     }
   }
 
+  private _getIconNameForPercent(percent: string): string {
+    // return name of icon we should show for given %
+    let desiredIconName = '';
+    for (const currIconName in this._circleIconsValueByName) {
+      const currMaxValue = this._circleIconsValueByName[currIconName];
+      if (percent <= currMaxValue) {
+        desiredIconName = currIconName;
+        break;
+      }
+    }
+    return desiredIconName;
+  }
+
   private _computeSeverityColor(value: string): unknown {
     const config = this._config;
     const numberValue = Number(value);
@@ -352,6 +481,7 @@ export class RPiMonitorCard extends LitElement {
       });
     }
 
+    // FIXME: UNDONE we don't have a config.color!!!!
     if (color == undefined) color = config.color;
     return color;
   }
@@ -367,14 +497,49 @@ export class RPiMonitorCard extends LitElement {
     return desired_value;
   }
 
-  private _generateGlanceRows(): TemplateResult[] {
-    // create the columns for the glance card
+  private _generateFullsizeCardRows(): TemplateResult[] {
+    // create the rows for the GLANCE card
     const rowsArray: TemplateResult[] = [];
-    const uiDateOptions = {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    };
+
+    for (const currName in this._cardFullElements) {
+      const currAttributeKey = this._cardFullElements[currName];
+      // Use `key` and `value`
+      const interpValue = this._getFullCardValueForAttributeKey(currAttributeKey);
+
+      // determine icon we should display
+      let currIconName = this._cardFullIconNames[currName];
+      if (currAttributeKey == Constants.RPI_FS_USED_PERCENT_KEY) {
+        const latestRawValue = this._getAttributeValueForKey(currAttributeKey);
+        currIconName = this._getIconNameForPercent(latestRawValue);
+      }
+      // get ID for values that need updating
+      const currClassID = this._cardFullCssIDs[currName];
+      // adjust our row size for bottom rows (group them visually)
+      let rowHightAttribute = 'attribute-row';
+      if (currName == 'Model') {
+        rowHightAttribute = 'first-short';
+      } else if (currName == 'Interfaces') {
+        rowHightAttribute = 'last-short';
+      }
+      // now generate row....
+      rowsArray.push(html`
+        <div class="${rowHightAttribute}">
+          <rpi-attribute-row>
+            <div class="icon-holder">
+              <ha-icon class="attr-icon-full pointer" icon="mdi:${currIconName}"></ha-icon>
+            </div>
+            <div class="info pointer text-content attr-value">${currName}</div>
+            <div id="${currClassID}" class="text-content right uom">${interpValue}</div>
+          </rpi-attribute-row>
+        </div>
+      `);
+    }
+    return rowsArray;
+  }
+
+  private _generateGlanceCardRows(): TemplateResult[] {
+    // create the columns for the GLANCE card
+    const columnsArray: TemplateResult[] = [];
 
     for (const currName in this._cardGlanceElements) {
       const currAttributeKey = this._cardGlanceElements[currName];
@@ -383,32 +548,150 @@ export class RPiMonitorCard extends LitElement {
       let interpValue = currValue;
       let currUnits = currName;
       if (currUnits == this.kREPLACE_WITH_TEMP_UNITS) {
-        currUnits = this._tempsInC ? 'ºC' : 'ºF';
+        currUnits = this._tempsInC == true ? 'ºC' : 'ºF';
         if (this._tempsInC == false) {
           interpValue = ((parseFloat(currValue) * 9) / 5 + 32.0).toFixed(1);
         }
       }
-      const currIconName = this._cardGlanceIconNames[currName];
+      let currIconName = this._cardGlanceIconNames[currName];
+      if (currName == '%') {
+        currIconName = this._getIconNameForPercent(currValue);
+      }
+      const currClassID = this._cardGlanceCssIDs[currName];
       // if we have update date, let's carefully format it
       if (currName == 'Upd') {
-        const timestamp = new Date(currValue);
-        interpValue = timestamp.toLocaleDateString('en-us', uiDateOptions);
+        interpValue = this._getUIDateForTimestamp(currValue);
       }
-      rowsArray.push(html`
+      columnsArray.push(html`
         <div class="attributes" tabindex="0">
           <div>
             <ha-icon class="attr-icon" icon="mdi:${currIconName}"></ha-icon>
           </div>
-          <div class="attr-value">${interpValue}</div>
+          <div id="${currClassID}" class="attr-value">${interpValue}</div>
           <div class="uom">${currUnits}</div>
         </div>
       `);
     }
-    return rowsArray;
+    return columnsArray;
+  }
+
+  private _getFullCardValueForAttributeKey(attrKey: string): string {
+    const latestValue = this._getAttributeValueForKey(attrKey);
+    let interpValue = latestValue;
+    if (attrKey == Constants.RPI_LAST_UPDATE_KEY) {
+      // regenerate the date value
+      interpValue = this._getUIDateForTimestamp(latestValue);
+    } else if (attrKey == Constants.RPI_TEMPERATURE_IN_C_KEY) {
+      // let's format our temperature value
+      const currUnits = this._tempsInC == true ? 'ºC' : 'ºF';
+      if (this._tempsInC == false) {
+        interpValue = ((parseFloat(latestValue) * 9) / 5 + 32.0).toFixed(1);
+      }
+      interpValue = interpValue + ' ' + currUnits;
+    } else if (attrKey == Constants.RPI_FS_TOTAL_GB_KEY) {
+      // append our units
+      interpValue = latestValue + ' GB';
+    } else if (attrKey == Constants.RPI_FS_USED_PERCENT_KEY) {
+      // append our % sign
+      interpValue = latestValue + ' %';
+    } else if (attrKey == Constants.SHOW_OS_PARTS_VALUE) {
+      // replace value with os release and version
+      const osRelease = this._getAttributeValueForKey(Constants.RPI_NIX_RELEASE_KEY);
+      const osVersion = this._getAttributeValueForKey(Constants.RPI_NIX_VERSION_KEY);
+      interpValue = osRelease + ' v' + osVersion;
+    } else if (attrKey == Constants.RPI_INTERFACES_KEY) {
+      const namesArray: string[] = [];
+      // expand our single letters into interface names
+      if (latestValue.includes('e')) {
+        namesArray.push('Ether');
+      }
+      if (latestValue.includes('w')) {
+        namesArray.push('WiFi');
+      }
+      if (latestValue.includes('b')) {
+        namesArray.push('Bluetooth');
+      }
+      interpValue = namesArray.join(', ');
+    }
+    return interpValue;
+  }
+
+  private _getUIDateForTimestamp(dateISO: string): string {
+    const uiDateOptions = {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    };
+    const timestamp = new Date(dateISO);
+    const desiredInterp = timestamp.toLocaleDateString('en-us', uiDateOptions);
+    return desiredInterp;
   }
 
   static get styles(): CSSResult {
+    // style our GLANCE card
     return css`
+      ha-card {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        overflow: hidden;
+      }
+      rpi-attribute-row {
+        display: grid;
+        flex-direction: row;
+        align-items: center;
+        height: 40px;
+        grid-template-columns: 40px 2fr 3fr;
+      }
+      #states > * {
+        margin: 8px 0px;
+      }
+      #states > div > * {
+        overflow: hidden;
+      }
+      #states {
+        flex: 1 1 0%;
+      }
+      .right {
+        text-align: right;
+      }
+      .first-short {
+        margin: 8px 0px 0px 0px;
+        height: 20px;
+      }
+      .mid-short {
+        margin: 0px;
+        height: 20px;
+      }
+      .last-short {
+        margin: 0px 0px 8px 0px;
+        height: 20px;
+      }
+      .pointer {
+        cursor: pointer;
+      }
+      .icon-holder {
+        align-items: center;
+        margin-left: 8px;
+      }
+      .attr-icon-full {
+        color: var(--paper-item-icon-color);
+      }
+      .attribute-row {
+        height: 40px;
+      }
+      .text-content {
+        display: inline;
+        line-height: 20px;
+      }
+      .info {
+        white-space: nowrap;
+        text-overflow: ellipses;
+        overflow: hidden;
+        margin-left: 16px;
+        flex: 1 0 60px;
+      }
       .content {
         display: flex;
         justify-content: space-between;
@@ -429,6 +712,13 @@ export class RPiMonitorCard extends LitElement {
       .attr-icon {
         color: var(--paper-item-icon-color);
         margin-bottom: 8px;
+      }
+      .last-heard-full {
+        position: absolute;
+        top: 45px;
+        right: 30px;
+        font-size: 12px;
+        color: var(--primary-text-color);
       }
       .last-heard {
         position: absolute;
