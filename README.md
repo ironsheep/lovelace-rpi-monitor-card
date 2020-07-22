@@ -4,29 +4,25 @@
 
 [![License][license-shield]](LICENSE)
 
-
 If you have a number of Raspberry Pis on your network then this might be the card you need to setup your Dashboard for monitoring all of you RPi's.
 
-### Where to get the sensor software
+## Where to get the sensor software
 
-Please visit my RPi Monitor project for the software needed to send the data to Home Assistant from each of your Raspberry Pi's. [See [RPi Reporter MQTT2HA Daemon](https://github.com/ironsheep/RPi-Reporter-MQTT2HA-Daemon).]
+Software supporting this card which sends data to Home Assistant from each of your Raspberry Pi's can be found at [RPi Reporter MQTT2HA Daemon](https://github.com/ironsheep/RPi-Reporter-MQTT2HA-Daemon).]
 
 ## About this card
 
-This is a Lovelace card showing you the status of one of the Raspberry Pi's on your network.  This card delivers a choice of smaller 'glance' style card or the large 'details' card.  You choose which you'd like for each of your RPi's.
+This is a Lovelace card showing you the status of one of the Raspberry Pi's on your network. This card offers a choice of smaller 'glance' style card or the large 'details' card. You choose which you'd like for each of your RPi's.
 
-This card is currently in development.  Our design goal is that the cards (glance, large) should look like this:
+This card is currently in development. Our design goal is that the cards (glance, large) should look like this:
 
 ![Planned Card Layouts](./DOCs/images/DesignGoal.png)
 
-
-
-------
+---
 
 If you like my work and/or this has helped you in some way then feel free to help me out for a couple of :coffee:'s or :pizza: slices!
 
 [![coffee](https://www.buymeacoffee.com/assets/img/custom_images/black_img.png)](https://www.buymeacoffee.com/ironsheep)
-
 
 ---
 
@@ -43,7 +39,7 @@ Please be patient, this marker will be removed when the card is finally ready fo
 ## Installation
 
 Use [HACS](https://github.com/custom-components/hacs) (recommended)
-or download *lightning-detector-card.js* from our [Latest Release](https://github.com/ironsheep/lovelace-lightning-detector-card/releases/latest) and place it in your www directory.
+or download _lightning-detector-card.js_ from our [Latest Release](https://github.com/ironsheep/lovelace-lightning-detector-card/releases/latest) and place it in your www directory.
 
 In your ui-lovelace.yaml (or resources.yaml, whichever you use for resources) add this:
 
@@ -56,17 +52,29 @@ If you don't use HACS please change the url accordingly.
 
 ## Config
 
-| Name             | Type   | Default       | Description                 |
-| ---------------- | ------ | ------------- | --------------------------- |
-| title            | string |  {sensor name}             | Common title   
-| style       | string |  'glance' or 'full'             | Card layout desired for this RPi              
-            
+| Name          | Type   | Default            | Description                                                           |
+| ------------- | ------ | ------------------ | --------------------------------------------------------------------- |
+| type          | string | **Required**       | `custom:rpi-monitor-card`                                             |
+| entity        | string | **Required**       | Entity State                                                          |
+| name          | string | none               | Overrides default title of the card.                                  |
+| card_style    | string | 'glance' or 'full' | Card layout desired for this RPi. (Default is Full)                   |
+| temp_scale    | string | 'C' or 'F'         | Show Temperature in Celsius (C) or Fahrenheit (F). (Default is C)     |
+| fs_severity   | object | none               | A list of severity values. See [Severity Options](#severity-options). |
+| temp_severity | object | none               | A list of severity values. See [Severity Options](#severity-options). |
+
 We also epxect to have coloring thresholds for free-space and temperature (with reasonable defaults.)
+
+## Severity Options
+
+| Name  | Type   | Default      | Description                                             |
+| ----- | ------ | ------------ | ------------------------------------------------------- |
+| from  | number | **Required** | Defines from which value the color should be displayed. |
+| to    | number | **Required** | Defines to which value the color should be displayed.   |
+| color | array  | **Required** | Defines the color to be displayed.                      |
 
 ## Credits
 
 - [iantrich](https://github.com/iantrich) for the card template and cards you've created which made my implementation effort much easier.
-
 
 ## License
 
