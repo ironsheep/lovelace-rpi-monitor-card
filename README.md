@@ -35,7 +35,7 @@ or download _rpi-monitor-card.js_ from our [Latest Release](https://github.com/i
 In your ui-lovelace.yaml (or resources.yaml, whichever you use for resources) add this:
 
 ```yaml
-- url: /hacsfiles/rpi-monitor-card/rpi-monitor-card.js
+- url: /hacsfiles/lovelace-rpi-monitor-card/rpi-monitor-card.js
   type: module
 ```
 

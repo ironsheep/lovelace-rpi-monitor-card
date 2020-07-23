@@ -563,12 +563,18 @@ export class RPiMonitorCard extends LitElement {
     //  timestamp portion of card
     //
     const root: any = this.shadowRoot;
+    let needCardFlush = false;
     const stateObj = this._config.entity ? this.hass.states[this._config.entity] : undefined;
     if (stateObj != undefined) {
       const labelElement = root.getElementById('card-timestamp');
       if (labelElement) {
-        const card_timestamp_value = this._getRelativeTimeSinceUpdate();
+        let card_timestamp_value = this._getRelativeTimeSinceUpdate();
         if (card_timestamp_value) {
+          // BUGFIX let's NOT show 'in NaN weeks' message on reload...
+          if (card_timestamp_value.includes('NaN')) {
+            card_timestamp_value = 'waiting for report...';
+            needCardFlush = true;
+          }
           labelElement.textContent = card_timestamp_value;
           // now apply color if our entry is OLD
           /*
@@ -580,6 +586,9 @@ export class RPiMonitorCard extends LitElement {
             labelElement.style.setProperty('color', intervalColor);
           }
           */
+        }
+        if (needCardFlush) {
+          this._emptyCardValuesWhileWaitingForSensor();
         }
       }
     }
@@ -776,6 +785,33 @@ export class RPiMonitorCard extends LitElement {
       desired_value = stateObj?.attributes[key];
     }
     return desired_value;
+  }
+
+  private _emptyCardValuesWhileWaitingForSensor(): void {
+    const root: any = this.shadowRoot;
+
+    if (this._sensorAvailable) {
+      if (this._useFullCard()) {
+        // clear values for our FULL card
+        for (const currName in this._cardFullCssIDs) {
+          const currLabelID = this._cardFullCssIDs[currName];
+          const labelElement = root.getElementById(currLabelID);
+          labelElement.textContent = '';
+        }
+      } else {
+        // clear values for our GLANCE card
+        for (const currName in this._cardGlanceCssIDs) {
+          const currLabelID = this._cardGlanceCssIDs[currName];
+          const currAttrKey = this._cardGlanceElements[currName];
+          const labelElement = root.getElementById(currLabelID);
+          labelElement.textContent = '';
+          if (currAttrKey == Constants.RPI_TEMPERATURE_IN_C_KEY) {
+            const scaleLabelElement = root.getElementById(this.kClassIdTempScale);
+            scaleLabelElement.textContent = this._getTemperatureScale();
+          }
+        }
+      }
+    }
   }
 
   private _generateFullsizeCardRows(): TemplateResult[] {
