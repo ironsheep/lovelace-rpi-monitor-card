@@ -1,6 +1,7 @@
-export const CARD_VERSION = '0.9.0';
+export const CARD_VERSION = '1.0.0';
 
 /*
+*  EXAMPLE attributes
 {
   "info": {
     "timestamp": "2020-07-19T13:17:54-06:00",

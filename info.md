@@ -2,8 +2,6 @@
 
 ![Project Maintenance][maintenance-shield]
 
-[![hacs_badge][hacs-shield]](https://github.com/custom-components/hacs)
-
 [![License][license-shield]](LICENSE)
 
 [![GitHub Release][releases-shield]][releases]
@@ -12,19 +10,13 @@
 
 If you have a number of Raspberry Pis on your network then this might be the card you need to setup your Dashboard for monitoring all of you RPi's.  Setup the sensor software on your RPi: See [RPi Reporter MQTT2HA Daemon](https://github.com/ironsheep/RPi-Reporter-MQTT2HA-Daemon). Then install this card to display the state of your RPi.
 
-## About this card
+--
 
 This is a Lovelace card showing you the status of one of the Raspberry Pi's on your network. This card offers a choice of smaller 'glance' style card or the larger 'full' card. You choose which you'd like for each of your RPi's.
 
-![Actual Card Layouts](./DOCs/images/LiveCards.png)
+![LiveCards](https://user-images.githubusercontent.com/540005/88344532-06257180-cd01-11ea-88ff-fac51d5ca5e6.png)
 
 Place one of these cards for each of your RPi's on your network (and install the sensor/daemon script on each RPi) and you can monitor your entire constellation of RPi's "at a glance"!
-
---
-
-If you like my work and/or this has helped you in some way then feel free to help me out for a couple of :coffee:'s or :pizza: slices!
-
-[![coffee](https://www.buymeacoffee.com/assets/img/custom_images/black_img.png)](https://www.buymeacoffee.com/ironsheep)
 
 
 ## Installation
@@ -73,6 +65,7 @@ The default coloring is
 
 
 ### Severity Coloring
+Use the following format to override either/or both of 'space used' and 'system temperature' values.
 
 | Name  | Type   | Default      | Description                                             |
 | ----- | ------ | ------------ | ------------------------------------------------------- |
@@ -113,19 +106,12 @@ fs_severity:
     to: 100
 ```
 
-## Credits
+---
 
-- Ian [iantrich](https://github.com/iantrich) for the card template and cards you've created which made my implementation effort much easier.
-- Lucas [Gluwc](https://github.com/Gluwc) for the custom-card: bar-card for his example of how to handle users specifying coloring overrides.
+If you like my work and/or this has helped you in some way then feel free to help me out for a couple of :coffee:'s or :pizza: slices!
 
-## License
+[![coffee](https://www.buymeacoffee.com/assets/img/custom_images/black_img.png)](https://www.buymeacoffee.com/ironsheep)
 
-Copyright © 2020 Iron Sheep Productions, LLC. All rights reserved.<br />
-Licensed under the MIT License. <br>
-<br>
-Follow these links for more information:
-
-### [Copyright](copyright) | [License](LICENSE)
 
 [maintenance-shield]: https://img.shields.io/badge/maintainer-S%20M%20Moraco%20%40ironsheepbiz-blue.svg?style=for-the-badge
 [hacs-shield]: https://img.shields.io/badge/HACS-Default-orange.svg?style=for-the-badge

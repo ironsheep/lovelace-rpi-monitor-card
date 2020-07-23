@@ -23,6 +23,7 @@ export interface RPiMonitorCardConfig extends LovelaceCardConfig {
   show_warning?: boolean;
   show_error?: boolean;
   test_gui?: boolean;
+  show_debug?: boolean;
 
   tap_action?: ActionConfig;
   hold_action?: ActionConfig;

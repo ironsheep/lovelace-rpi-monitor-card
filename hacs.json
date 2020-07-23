@@ -1,5 +1,5 @@
 {
     "name": "RPi Monitor Card",
-    "render_readme": true,
+    "render_readme": false,
     "filename": "rpi-monitor-card.js"
 }

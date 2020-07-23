@@ -57,6 +57,11 @@ export class RPiMonitorCard extends LitElement {
   private _updateTimerID: NodeJS.Timeout | undefined;
   private _hostname: string = '';
   private kREPLACE_WITH_TEMP_UNITS: string = 'replace-with-temp-units';
+
+  // WARNING set following to false before commit!
+  private _show_debug: boolean = false;
+  //private _show_debug: boolean = true;
+
   //
   // FULL-SIZE CARD tables
   //
@@ -164,6 +169,7 @@ export class RPiMonitorCard extends LitElement {
     Upd: this.kClassIdIconUpdated,
   };
 
+  // space used icon set
   private _circleIconsValueByName = {
     'circle-outline': 0,
     'circle-slice-1': 13,
@@ -176,6 +182,74 @@ export class RPiMonitorCard extends LitElement {
     'circle-slice-8': 100,
   };
 
+  /*
+   *  COLORING Goals (default)
+   *
+   *  1) color  time since reported:  yellow if longer than 1 reporting interval, red if two or more
+   *  2) color space-used: nothing to 60%, 61-85% yellow, 86%+ red
+   *  3) color temp: nothing to 59C, 60-79C yellow, 80C+ red
+   */
+
+  // DEFAULT coloring for used space
+  //  user sets 'fs_severity' to override
+  private _colorUsedSpaceDefault = [
+    {
+      color: 'undefined',
+      from: 0,
+      to: 59,
+    },
+    {
+      color: 'yellow',
+      from: 60,
+      to: 84,
+    },
+    {
+      color: 'red',
+      from: 85,
+      to: 100,
+    },
+  ];
+
+  // coloring for temp-in-C
+  //  user sets 'temp_severity' to override
+  private _colorTemperatureDefault = [
+    {
+      color: 'undefined',
+      from: 0,
+      to: 59,
+    },
+    {
+      color: 'yellow',
+      from: 60,
+      to: 79,
+    },
+    {
+      color: 'red',
+      from: 85,
+      to: 100,
+    },
+  ];
+
+  // coloring for temp-in-C
+  // no user override for now
+  private _colorReportPeriodsAgoDefault = [
+    {
+      color: 'undefined',
+      from: 0,
+      to: 0,
+    },
+    {
+      color: 'yellow',
+      from: 1,
+      to: 1,
+    },
+    {
+      color: 'red',
+      from: 2,
+      to: 100,
+    },
+  ];
+
   public setConfig(config: RPiMonitorCardConfig): void {
     // Optional: Check for required fields and that they are of the proper format
     if (!config || config.show_error) {
@@ -186,7 +260,7 @@ export class RPiMonitorCard extends LitElement {
       const styleValue: string = config.card_style.toLocaleLowerCase();
       if (styleValue != 'full' && styleValue != 'glance') {
         console.log('Invalid configuration. INVALID card_style = [' + config.card_style + ']');
-        throw new Error('Illegal card_style: value [card_style:' + config.card_style + ']');
+        throw new Error('Illegal card_style: value (card_style: ' + config.card_style + ') must be [full or glance]');
       }
     }
 
@@ -194,7 +268,7 @@ export class RPiMonitorCard extends LitElement {
       const scaleValue: string = config.temp_scale.toLocaleLowerCase();
       if (scaleValue != 'c' && scaleValue != 'f') {
         console.log('Invalid configuration. INVALID temp_scale = [' + config.temp_scale + ']');
-        throw new Error('Illegal temp_scale: value [temp_scale:' + config.temp_scale + ']');
+        throw new Error('Illegal temp_scale: value (temp_scale: ' + config.temp_scale + ') must be [F or C]');
       }
     }
 
@@ -218,10 +292,12 @@ export class RPiMonitorCard extends LitElement {
     this._updateSensorAvailability();
   }
 
+  /*
   public getCardSize(): number {
     // adjust this based on glance or full card type
     return this._useFullCard() == true ? 3 : 1;
   }
+  */
 
   protected shouldUpdate(changedProps: PropertyValues): boolean {
     //return hasConfigOrEntityChanged(this, changedProps, false);
@@ -251,26 +327,32 @@ export class RPiMonitorCard extends LitElement {
     }
 
     const entityId = this._config.entity ? this._config.entity : undefined;
+
+    if (entityId && !this._sensorAvailable) {
+      const warningMessage = 'Entity Unavailable: ' + entityId;
+      return this.showWarning(warningMessage);
+    }
+
     const stateObj = this._config.entity ? this.hass.states[this._config.entity] : undefined;
 
     if (!entityId && !stateObj) {
       return this.showWarning('Entity Unavailable');
     }
 
-    if (!this._sensorAvailable) {
-      return this.showWarning('Entity Unavailable');
-    }
-
     if (this._firstTime) {
-      console.log('- stateObj:');
-      console.log(stateObj);
+      if (this._showDebug()) {
+        console.log('- stateObj:');
+        console.log(stateObj);
+      }
 
       // set timer so our card updates timestamp every 5 seconds : 5000 (1 second: 1000)
       // FIXME: UNDONE remember to clear this interval when entity NOT avail. and restore when comes avail again...
       this._startCardRefreshTimer();
 
-      console.log('- 1st-time _config:');
-      console.log(this._config);
+      if (this._showDebug()) {
+        console.log('- 1st-time _config:');
+        console.log(this._config);
+      }
       this._firstTime = false;
     }
 
@@ -484,15 +566,21 @@ export class RPiMonitorCard extends LitElement {
     const stateObj = this._config.entity ? this.hass.states[this._config.entity] : undefined;
     if (stateObj != undefined) {
       const labelElement = root.getElementById('card-timestamp');
-      const card_timestamp_value = this._getRelativeTimeSinceUpdate();
-      labelElement.textContent = card_timestamp_value;
-      // now apply color if our entry is OLD
-      const sinceInMinutes = this._getMinutesSinceUpdate();
-      const periodMinutes = this._getAttributeValueForKey(Constants.RPI_SCRIPT_INTERVAL_KEY);
-      const mumber_periods: number = sinceInMinutes / parseInt(periodMinutes);
-      const intervalColor = this._computeReporterAgeColor(mumber_periods.toString());
-      if (intervalColor != '') {
-        labelElement.style.setProperty('color', intervalColor);
+      if (labelElement) {
+        const card_timestamp_value = this._getRelativeTimeSinceUpdate();
+        if (card_timestamp_value) {
+          labelElement.textContent = card_timestamp_value;
+          // now apply color if our entry is OLD
+          /*
+          const sinceInMinutes = this._getMinutesSinceUpdate();
+          const periodMinutes = this._getAttributeValueForKey(Constants.RPI_SCRIPT_INTERVAL_KEY);
+          const mumber_periods: number = sinceInMinutes / parseInt(periodMinutes);
+          const intervalColor = this._computeReporterAgeColor(mumber_periods.toString());
+          if (intervalColor != '') {
+            labelElement.style.setProperty('color', intervalColor);
+          }
+          */
+        }
       }
     }
   }
@@ -524,7 +612,9 @@ export class RPiMonitorCard extends LitElement {
       this._hostname = this._getAttributeValueForKey(Constants.RPI_HOST_NAME_KEY);
     }
     const logMessage = '(' + this._hostname + '): ' + message;
-    console.log(logMessage);
+    if (this._showDebug()) {
+      console.log(logMessage);
+    }
   }
 
   private _updateSensorAvailability(): void {
@@ -537,10 +627,15 @@ export class RPiMonitorCard extends LitElement {
         this._sensorAvailable = false;
         availChanged = true; // force output in this case
       } else {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        const tmpAvail = this.hass.states[this._config.entity!].state != 'unavailable';
-        availChanged = this._sensorAvailable != tmpAvail ? true : false;
-        this._sensorAvailable = tmpAvail;
+        try {
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          const tmpAvail = this.hass.states[this._config.entity!].state != 'unavailable';
+          availChanged = this._sensorAvailable != tmpAvail ? true : false;
+          this._sensorAvailable = tmpAvail;
+        } catch (error) {
+          this._sensorAvailable = false;
+          availChanged = true; // force output in this case
+        }
       }
     } else {
       this._sensorAvailable = false;
@@ -563,71 +658,6 @@ export class RPiMonitorCard extends LitElement {
     }
     return desiredIconName;
   }
-
-  /*
-   *  COLORING Goals (default)
-   *
-   *  1) color  time since reported:  yellow if longer than 1 reporting interval, red if two or more
-   *  2) color space-used: nothing to 60%, 61-85% yellow, 86%+ red
-   *  3) color temp: nothing to 59C, 60-79C yellow, 80C+ red
-   */
-
-  // coloring for used space
-  private _colorUsedSpaceDefault = [
-    {
-      color: 'undefined',
-      from: 0,
-      to: 59,
-    },
-    {
-      color: 'yellow',
-      from: 60,
-      to: 84,
-    },
-    {
-      color: 'red',
-      from: 85,
-      to: 100,
-    },
-  ];
-
-  // coloring for temp-in-C
-  private _colorTemperatureDefault = [
-    {
-      color: 'undefined',
-      from: 0,
-      to: 59,
-    },
-    {
-      color: 'yellow',
-      from: 60,
-      to: 79,
-    },
-    {
-      color: 'red',
-      from: 85,
-      to: 100,
-    },
-  ];
-
-  // coloring for temp-in-C
-  private _colorReportPeriodsAgoDefault = [
-    {
-      color: 'undefined',
-      from: 0,
-      to: 0,
-    },
-    {
-      color: 'yellow',
-      from: 1,
-      to: 1,
-    },
-    {
-      color: 'red',
-      from: 2,
-      to: 100,
-    },
-  ];
 
   private _computeReporterAgeColor(value: string): unknown {
     const numberValue = Number(value);
@@ -733,6 +763,10 @@ export class RPiMonitorCard extends LitElement {
     const stateObj = this._config.entity ? this.hass.states[this._config.entity] : undefined;
 
     if (!entityId && !stateObj) {
+      return '';
+    }
+
+    if (stateObj?.attributes == undefined) {
       return '';
     }
 
@@ -892,6 +926,17 @@ export class RPiMonitorCard extends LitElement {
     const timestamp = new Date(dateISO);
     const desiredInterp = timestamp.toLocaleDateString('en-us', uiDateOptions);
     return desiredInterp;
+  }
+
+  private _showDebug(): boolean {
+    // we show debug if enabled in code or if found enabled in config for this card!
+    let showDebugStatus = this._show_debug;
+    if (this._config) {
+      if (this._config.show_debug != undefined) {
+        showDebugStatus = showDebugStatus == true || this._config.show_debug == true;
+      }
+    }
+    return showDebugStatus;
   }
 
   static get styles(): CSSResult {
