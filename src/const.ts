@@ -1,4 +1,4 @@
-export const CARD_VERSION = '0.2.0';
+export const CARD_VERSION = '0.9.0';
 
 /*
 {
@@ -45,6 +45,7 @@ export const RPI_FS_USED_PERCENT_KEY = 'fs_free_prcnt';
 export const RPI_NETWORKING_KEY = 'networking';
 export const RPI_TEMPERATURE_IN_C_KEY = 'temperature_c';
 export const RPI_SCRIPT_VER_KEY = 'reporter';
+export const RPI_SCRIPT_INTERVAL_KEY = 'report_interval';
 
 export const SHOW_OS_PARTS_VALUE = 'show-os-parts';
 

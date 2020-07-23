@@ -54,8 +54,6 @@ export class RPiMonitorCard extends LitElement {
   // and those that don't cause a re-render
   private _firstTime: boolean = true;
   private _sensorAvailable: boolean = false;
-  private _useFullCard: boolean = false;
-  private _tempsInC: boolean = true;
   private _updateTimerID: NodeJS.Timeout | undefined;
   private _hostname: string = '';
   private kREPLACE_WITH_TEMP_UNITS: string = 'replace-with-temp-units';
@@ -85,6 +83,16 @@ export class RPiMonitorCard extends LitElement {
     Interfaces: '',
   };
 
+  // attribute ICON IDs
+  private kClassIdIconFSAvail = 'ico-fs-percent';
+  private kClassIdIconFSTotal = 'ico-fs-total';
+  private kClassIdIconSysTemp = 'ico-sys-temp';
+  private kClassIdIconUptime = 'ico-up-time';
+  private kClassIdIconUpdated = 'ico-last-update';
+  private kClassIdIconOS = 'ico-*nix';
+  private kClassIdIconRPiModel = 'ico-rpi-model';
+  private kClassIdIconInterfaces = 'ico-rpi-ifaces';
+  // attribute value label IDs
   private kClassIdFSAvail = 'fs-percent';
   private kClassIdFSTotal = 'fs-total';
   private kClassIdSysTemp = 'sys-temp';
@@ -93,6 +101,8 @@ export class RPiMonitorCard extends LitElement {
   private kClassIdOS = '*nix';
   private kClassIdRPiModel = 'rpi-model';
   private kClassIdInterfaces = 'rpi-ifaces';
+  // ond one special for unit
+  private kClassIdTempScale = 'sys-temp-scale';
 
   private _cardFullCssIDs = {
     // top to bottom
@@ -104,6 +114,17 @@ export class RPiMonitorCard extends LitElement {
     OS: this.kClassIdOS,
     Model: this.kClassIdRPiModel,
     Interfaces: this.kClassIdInterfaces,
+  };
+  private _cardFullIconCssIDs = {
+    // top to bottom
+    Storage: this.kClassIdIconFSTotal,
+    'Storage Use': this.kClassIdIconFSAvail,
+    Updated: this.kClassIdIconUpdated,
+    Temperature: this.kClassIdIconSysTemp,
+    'Up-time': this.kClassIdIconUptime,
+    OS: this.kClassIdIconOS,
+    Model: this.kClassIdIconRPiModel,
+    Interfaces: this.kClassIdIconInterfaces,
   };
   //
   // GLANCE CARD tables
@@ -132,6 +153,15 @@ export class RPiMonitorCard extends LitElement {
     'replace-with-temp-units': this.kClassIdSysTemp,
     UpTime: this.kClassIdUptime,
     Upd: this.kClassIdUpdated,
+  };
+
+  private _cardGlanceIconCssIDs = {
+    // left to right
+    '%': this.kClassIdIconFSAvail,
+    GB: this.kClassIdIconFSTotal,
+    'replace-with-temp-units': this.kClassIdIconSysTemp,
+    UpTime: this.kClassIdIconUptime,
+    Upd: this.kClassIdIconUpdated,
   };
 
   private _circleIconsValueByName = {
@@ -190,7 +220,7 @@ export class RPiMonitorCard extends LitElement {
 
   public getCardSize(): number {
     // adjust this based on glance or full card type
-    return this._useFullCard == true ? 6 : 1;
+    return this._useFullCard() == true ? 3 : 1;
   }
 
   protected shouldUpdate(changedProps: PropertyValues): boolean {
@@ -227,6 +257,10 @@ export class RPiMonitorCard extends LitElement {
       return this.showWarning('Entity Unavailable');
     }
 
+    if (!this._sensorAvailable) {
+      return this.showWarning('Entity Unavailable');
+    }
+
     if (this._firstTime) {
       console.log('- stateObj:');
       console.log(stateObj);
@@ -244,7 +278,7 @@ export class RPiMonitorCard extends LitElement {
 
     const card_timestamp_value = this._getRelativeTimeSinceUpdate();
 
-    if (this._useFullCard) {
+    if (this._useFullCard()) {
       // our FULL card
       const fullRows = this._generateFullsizeCardRows();
 
@@ -299,6 +333,17 @@ export class RPiMonitorCard extends LitElement {
     return desiredValue;
   }
 
+  private _getMinutesSinceUpdate(): number {
+    const stateObj = this._config.entity ? this.hass.states[this._config.entity] : undefined;
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const stateStrInterp = computeStateDisplay(this.hass?.localize, stateObj!, this.hass?.language);
+    const then = new Date(stateStrInterp);
+    const now = new Date();
+    let diff = (now.getTime() - then.getTime()) / 1000;
+    diff /= 60;
+    return Math.abs(Math.round(diff));
+  }
+
   // Here we need to refresh the rings and titles after it has been initially rendered
   protected updated(changedProps): void {
     if (!this._config) {
@@ -325,33 +370,66 @@ export class RPiMonitorCard extends LitElement {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const root: any = this.shadowRoot;
 
-    if (this._useFullCard) {
-      // update our FULL card
-      for (const currName in this._cardFullCssIDs) {
-        const currLabelID = this._cardFullCssIDs[currName];
-        const currAttrKey = this._cardFullElements[currName];
-        const rawValue = this._getAttributeValueForKey(currAttrKey);
-        const latestValue = this._getFullCardValueForAttributeKey(currAttrKey);
-        const labelElement = root.getElementById(currLabelID);
-        labelElement.textContent = latestValue;
-        if (currAttrKey == Constants.RPI_FS_USED_PERCENT_KEY) {
-          const color = this._computeFileSystemUsageColor(rawValue);
-          if (color != '') {
-            labelElement.style.setProperty('color', color);
+    if (this._sensorAvailable) {
+      if (this._useFullCard()) {
+        // update our FULL card
+        for (const currName in this._cardFullCssIDs) {
+          const currLabelID = this._cardFullCssIDs[currName];
+          const currAttrKey = this._cardFullElements[currName];
+          const rawValue = this._getAttributeValueForKey(currAttrKey);
+          const latestValue = this._getFullCardValueForAttributeKey(currAttrKey);
+          const labelElement = root.getElementById(currLabelID);
+          labelElement.textContent = latestValue;
+          const currIconCssID = this._cardFullIconCssIDs[currName];
+          const iconElement = root.getElementById(currIconCssID);
+          if (currAttrKey == Constants.RPI_FS_USED_PERCENT_KEY) {
+            const color = this._computeFileSystemUsageColor(rawValue);
+            if (color != '') {
+              labelElement.style.setProperty('color', color);
+              iconElement.style.setProperty('color', color);
+            }
+          }
+          if (currAttrKey == Constants.RPI_TEMPERATURE_IN_C_KEY) {
+            const color = this._computeTemperatureColor(rawValue);
+            if (color != '') {
+              labelElement.style.setProperty('color', color);
+              iconElement.style.setProperty('color', color);
+            }
           }
         }
-      }
-    } else {
-      // update our GLANCE card
-      for (const currName in this._cardGlanceCssIDs) {
-        const currLabelID = this._cardGlanceCssIDs[currName];
-        const currAttrKey = this._cardGlanceElements[currName];
-        let latestValue = this._getAttributeValueForKey(currAttrKey);
-        if (currName == 'Upd') {
-          latestValue = this._getUIDateForTimestamp(latestValue);
+      } else {
+        // update our GLANCE card
+        for (const currName in this._cardGlanceCssIDs) {
+          const currLabelID = this._cardGlanceCssIDs[currName];
+          const currAttrKey = this._cardGlanceElements[currName];
+          const rawValue = this._getAttributeValueForKey(currAttrKey);
+          let latestValue = this._getAttributeValueForKey(currAttrKey);
+          if (currAttrKey == Constants.RPI_UP_TIME_KEY) {
+            latestValue = this._filterUptime(latestValue);
+          } else if (currAttrKey == Constants.RPI_LAST_UPDATE_KEY) {
+            latestValue = this._getUIDateForTimestamp(latestValue);
+          }
+          const labelElement = root.getElementById(currLabelID);
+          labelElement.textContent = latestValue;
+          const currIconCssID = this._cardGlanceIconCssIDs[currName];
+          const iconElement = root.getElementById(currIconCssID);
+          if (currAttrKey == Constants.RPI_FS_USED_PERCENT_KEY) {
+            const color = this._computeFileSystemUsageColor(rawValue);
+            if (color != '') {
+              labelElement.style.setProperty('color', color);
+              iconElement.style.setProperty('color', color);
+            }
+          }
+          if (currAttrKey == Constants.RPI_TEMPERATURE_IN_C_KEY) {
+            const color = this._computeTemperatureColor(rawValue);
+            if (color != '') {
+              labelElement.style.setProperty('color', color);
+              iconElement.style.setProperty('color', color);
+            }
+            const scaleLabelElement = root.getElementById(this.kClassIdTempScale);
+            scaleLabelElement.textContent = this._getTemperatureScale();
+          }
         }
-        const labelElement = root.getElementById(currLabelID);
-        labelElement.textContent = latestValue;
       }
     }
   }
@@ -402,38 +480,43 @@ export class RPiMonitorCard extends LitElement {
     //
     //  timestamp portion of card
     //
-    if (this._useFullCard == false) {
-      const root: any = this.shadowRoot;
-      const stateObj = this._config.entity ? this.hass.states[this._config.entity] : undefined;
-      if (stateObj != undefined) {
-        const labelElement = root.getElementById('card-timestamp');
-        const card_timestamp_value = this._getRelativeTimeSinceUpdate();
-        labelElement.textContent = card_timestamp_value;
+    const root: any = this.shadowRoot;
+    const stateObj = this._config.entity ? this.hass.states[this._config.entity] : undefined;
+    if (stateObj != undefined) {
+      const labelElement = root.getElementById('card-timestamp');
+      const card_timestamp_value = this._getRelativeTimeSinceUpdate();
+      labelElement.textContent = card_timestamp_value;
+      // now apply color if our entry is OLD
+      const sinceInMinutes = this._getMinutesSinceUpdate();
+      const periodMinutes = this._getAttributeValueForKey(Constants.RPI_SCRIPT_INTERVAL_KEY);
+      const mumber_periods: number = sinceInMinutes / parseInt(periodMinutes);
+      const intervalColor = this._computeReporterAgeColor(mumber_periods.toString());
+      if (intervalColor != '') {
+        labelElement.style.setProperty('color', intervalColor);
       }
     }
   }
 
-  private _interpretConfigToCardControls(): void {
-    // setup our card control vars based on latest config values...
-    const initialFullValue = this._useFullCard;
-    if (this._config.card_style == undefined || this._config.card_style.toLocaleLowerCase() == 'full') {
-      this._useFullCard = true;
-    } else {
-      this._useFullCard = false;
+  private _useFullCard(): boolean {
+    let useFullCardStatus = true;
+    if (this._config) {
+      if (this._config.card_style != undefined) {
+        // NOTE this depends upon full validation of the two legal values [full|glance] above
+        useFullCardStatus = this._config.card_style.toLocaleLowerCase() == 'full' ? true : false;
+      }
     }
-    if (initialFullValue != this._useFullCard) {
-      this._logChangeMessage('* CHANGE _useFullCard now: ' + this._useFullCard);
-    }
+    return useFullCardStatus;
+  }
 
-    const initialTempValue = this._tempsInC;
-    if (this._config.temp_scale == undefined || this._config.temp_scale.toLocaleLowerCase() == 'C') {
-      this._tempsInC = true;
-    } else {
-      this._tempsInC = false;
+  private _useTempsInC(): boolean {
+    let useTempsInCStatus = true;
+    if (this._config) {
+      if (this._config.temp_scale != undefined) {
+        // NOTE this depends upon full validation of the two legal values [full|glance] above
+        useTempsInCStatus = this._config.temp_scale.toLocaleLowerCase() == 'c' ? true : false;
+      }
     }
-    if (initialTempValue != this._tempsInC) {
-      this._logChangeMessage('* CHANGE _tempsInC now: ' + this._tempsInC);
-    }
+    return useTempsInCStatus;
   }
 
   private _logChangeMessage(message: string): void {
@@ -465,9 +548,6 @@ export class RPiMonitorCard extends LitElement {
     }
     if (availChanged) {
       this._logChangeMessage('* SENSOR available: ' + this._sensorAvailable);
-    }
-    if (this._sensorAvailable) {
-      this._interpretConfigToCardControls();
     }
   }
 
@@ -549,14 +629,34 @@ export class RPiMonitorCard extends LitElement {
     },
   ];
 
-  private _computeFileSystemUsageColor(value: string): unknown {
+  private _computeReporterAgeColor(value: string): unknown {
+    const numberValue = Number(value);
+    const sections = this._colorReportPeriodsAgoDefault;
+
+    //console.log('color-table: sections=');
+    //console.log(sections);
+    //return '';
+
+    let color: undefined | string;
+
+    sections.forEach(section => {
+      if (numberValue >= section.from && numberValue <= section.to) {
+        color = section.color;
+      }
+    });
+
+    if (color == undefined) color = '';
+    return color;
+  }
+
+  private _computeTemperatureColor(value: string): unknown {
     const config = this._config;
     const numberValue = Number(value);
-    const sections = config.fs_severity ? config.fs_severity : this._colorUsedSpaceDefault;
+    const sections = config.temp_severity ? config.temp_severity : this._colorTemperatureDefault;
 
-    console.log('color-table: sections=');
-    console.log(sections);
-    return '';
+    //console.log('color-table: sections=');
+    //console.log(sections);
+    //return '';
 
     let color: undefined | string;
 
@@ -574,9 +674,54 @@ export class RPiMonitorCard extends LitElement {
       });
     }
 
-    // FIXME: UNDONE we don't have a config.color so return empty-string!!!!
     if (color == undefined) color = '';
     return color;
+  }
+
+  private _computeFileSystemUsageColor(value: string): string {
+    const config = this._config;
+    const numberValue = Number(value);
+    const sections = config.fs_severity ? config.fs_severity : this._colorUsedSpaceDefault;
+
+    //console.log('color-table: sections=');
+    //console.log(sections);
+    //return '';
+
+    let color: undefined | string;
+
+    if (isNaN(numberValue)) {
+      sections.forEach(section => {
+        if (value == section.text) {
+          color = section.color;
+        }
+      });
+    } else {
+      sections.forEach(section => {
+        if (numberValue >= section.from && numberValue <= section.to) {
+          color = section.color;
+        }
+      });
+    }
+
+    if (color == undefined) color = '';
+    return color;
+  }
+
+  private _filterUptime(uptimeRaw: string): string {
+    const lineParts: string[] = uptimeRaw.split(' ');
+    let interpValue = uptimeRaw;
+    if (interpValue.includes(':')) {
+      for (let index = 0; index < lineParts.length; index++) {
+        const currPart = lineParts[index];
+        if (currPart.includes(':')) {
+          const timeParts = currPart.split(':');
+          const newPart = timeParts[0] + 'h:' + timeParts[0] + 'm';
+          lineParts[index] = newPart;
+        }
+      }
+      interpValue = lineParts.join(' ');
+    }
+    return interpValue;
   }
 
   private _getAttributeValueForKey(key: string): string {
@@ -614,8 +759,9 @@ export class RPiMonitorCard extends LitElement {
         const latestRawValue = this._getAttributeValueForKey(currAttributeKey);
         currIconName = this._getIconNameForPercent(latestRawValue);
       }
+      const currIconCssID = this._cardFullIconCssIDs[currName];
       // get ID for values that need updating
-      const currClassID = this._cardFullCssIDs[currName];
+      const currLabelCssID = this._cardFullCssIDs[currName];
       // adjust our row size for bottom rows (group them visually)
       let rowHightAttribute = 'attribute-row';
       if (currName == 'Model') {
@@ -628,10 +774,10 @@ export class RPiMonitorCard extends LitElement {
         <div class="${rowHightAttribute}">
           <rpi-attribute-row>
             <div class="icon-holder">
-              <ha-icon class="attr-icon-full pointer" icon="mdi:${currIconName}"></ha-icon>
+              <ha-icon id="${currIconCssID}" class="attr-icon-full pointer" icon="mdi:${currIconName}"></ha-icon>
             </div>
             <div class="info pointer text-content attr-value">${currName}</div>
-            <div id="${currClassID}" class="text-content right uom">${interpValue}</div>
+            <div id="${currLabelCssID}" class="text-content right uom">${interpValue}</div>
           </rpi-attribute-row>
         </div>
       `);
@@ -650,31 +796,50 @@ export class RPiMonitorCard extends LitElement {
       let interpValue = currValue;
       let currUnits = currName;
       if (currUnits == this.kREPLACE_WITH_TEMP_UNITS) {
-        currUnits = this._tempsInC == true ? 'ºC' : 'ºF';
-        if (this._tempsInC == false) {
-          interpValue = ((parseFloat(currValue) * 9) / 5 + 32.0).toFixed(1);
-        }
+        currUnits = this._getTemperatureScale();
+        interpValue = this._getScaledTemperatureValue(interpValue);
+      }
+      if (currAttributeKey == Constants.RPI_UP_TIME_KEY) {
+        interpValue = this._filterUptime(currValue);
       }
       let currIconName = this._cardGlanceIconNames[currName];
-      if (currName == '%') {
+      if (currAttributeKey == Constants.RPI_FS_USED_PERCENT_KEY) {
         currIconName = this._getIconNameForPercent(currValue);
       }
-      const currClassID = this._cardGlanceCssIDs[currName];
+      const currLabelCssID = this._cardGlanceCssIDs[currName];
+      const currIconCssID = this._cardGlanceIconCssIDs[currName];
       // if we have update date, let's carefully format it
-      if (currName == 'Upd') {
+      if (currAttributeKey == Constants.RPI_LAST_UPDATE_KEY) {
         interpValue = this._getUIDateForTimestamp(currValue);
+      }
+      let scaleCssID = 'units';
+      if (currAttributeKey == Constants.RPI_TEMPERATURE_IN_C_KEY) {
+        scaleCssID = this.kClassIdTempScale;
       }
       columnsArray.push(html`
         <div class="attributes" tabindex="0">
           <div>
-            <ha-icon class="attr-icon" icon="mdi:${currIconName}"></ha-icon>
+            <ha-icon id="${currIconCssID}" class="attr-icon" icon="mdi:${currIconName}"></ha-icon>
           </div>
-          <div id="${currClassID}" class="attr-value">${interpValue}</div>
-          <div class="uom">${currUnits}</div>
+          <div id="${currLabelCssID}" class="attr-value">${interpValue}</div>
+          <div id="${scaleCssID}" class="uom">${currUnits}</div>
         </div>
       `);
     }
     return columnsArray;
+  }
+
+  private _getTemperatureScale(): string {
+    return this._useTempsInC() == true ? 'ºC' : 'ºF';
+  }
+
+  private _getScaledTemperatureValue(temperature_raw: string): string {
+    let interpValue = temperature_raw;
+    if (this._useTempsInC() == false) {
+      // if not inC convert to F
+      interpValue = ((parseFloat(temperature_raw) * 9) / 5 + 32.0).toFixed(1);
+    }
+    return interpValue;
   }
 
   private _getFullCardValueForAttributeKey(attrKey: string): string {
@@ -685,10 +850,8 @@ export class RPiMonitorCard extends LitElement {
       interpValue = this._getUIDateForTimestamp(latestValue);
     } else if (attrKey == Constants.RPI_TEMPERATURE_IN_C_KEY) {
       // let's format our temperature value
-      const currUnits = this._tempsInC == true ? 'ºC' : 'ºF';
-      if (this._tempsInC == false) {
-        interpValue = ((parseFloat(latestValue) * 9) / 5 + 32.0).toFixed(1);
-      }
+      const currUnits = this._getTemperatureScale();
+      interpValue = this._getScaledTemperatureValue(latestValue);
       interpValue = interpValue + ' ' + currUnits;
     } else if (attrKey == Constants.RPI_FS_TOTAL_GB_KEY) {
       // append our units
@@ -696,6 +859,8 @@ export class RPiMonitorCard extends LitElement {
     } else if (attrKey == Constants.RPI_FS_USED_PERCENT_KEY) {
       // append our % sign
       interpValue = latestValue + ' %';
+    } else if (attrKey == Constants.RPI_UP_TIME_KEY) {
+      interpValue = this._filterUptime(interpValue);
     } else if (attrKey == Constants.SHOW_OS_PARTS_VALUE) {
       // replace value with os release and version
       const osRelease = this._getAttributeValueForKey(Constants.RPI_NIX_RELEASE_KEY);
