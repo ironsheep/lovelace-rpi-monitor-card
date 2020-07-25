@@ -10,7 +10,7 @@
 
 ![Release](https://github.com/ironsheep/lovelace-rpi-monitor-card/workflows/Release/badge.svg)
 
-If you have a number of Raspberry Pis on your network then this might be the card you need to setup your Dashboard for monitoring all of you RPi's.  Setup the sensor software on your RPi: See [RPi Reporter MQTT2HA Daemon](https://github.com/ironsheep/RPi-Reporter-MQTT2HA-Daemon). Then install this card to display the state of your RPi.
+If you have a number of Raspberry Pis on your network then this might be the card you need to setup your Dashboard for monitoring all of you RPi's. Setup the sensor software on your RPi: See [RPi Reporter MQTT2HA Daemon](https://github.com/ironsheep/RPi-Reporter-MQTT2HA-Daemon). Then install this card to display the state of your RPi.
 
 ## About this card
 
@@ -25,7 +25,6 @@ Place one of these cards for each of your RPi's on your network (and install the
 If you like my work and/or this has helped you in some way then feel free to help me out for a couple of :coffee:'s or :pizza: slices!
 
 [![coffee](https://www.buymeacoffee.com/assets/img/custom_images/black_img.png)](https://www.buymeacoffee.com/ironsheep)
-
 
 ## Installation
 
@@ -43,16 +42,16 @@ If you don't use HACS please change the url accordingly.
 
 ## Configuration
 
-| Name          | Type   | Default            | Description                                                           |
-| ------------- | ------ | ------------------ | --------------------------------------------------------------------- |
-| type          | string | **Required**       | `custom:rpi-monitor-card`                                             |
-| entity        | string | **Required**       | Entity State                                                          |
-| name          | string | none               | Overrides default title of the card. (Default: RPi Monitor {FQDN}                                 |
-| card_style    | string | 'glance' or 'full' | Card layout desired for this RPi. (Default is Full)                   |
-| temp_scale    | string | 'C' or 'F'         | Show Temperature in Celsius (C) or Fahrenheit (F). (Default is C)     |
+| Name          | Type   | Default            | Description                                                             |
+| ------------- | ------ | ------------------ | ----------------------------------------------------------------------- |
+| type          | string | **Required**       | `custom:rpi-monitor-card`                                               |
+| entity        | string | **Required**       | Entity State                                                            |
+| name          | string | none               | Overrides default title of the card. (Default: RPi Monitor {FQDN})      |
+| name_prefix   | string | 'RPi monitor'      | Overrides default name prefix(Default: 'RPi Monitor')                   |
+| card_style    | string | 'glance' or 'full' | Card layout desired for this RPi. (Default is full)                     |
+| temp_scale    | string | 'C' or 'F'         | Show Temperature in Celsius (C) or Fahrenheit (F). (Default is C)       |
 | fs_severity   | object | none               | A list of severity values. See [Severity Coloring](#severity-coloring). |
 | temp_severity | object | none               | A list of severity values. See [Severity Coloring](#severity-coloring). |
-
 
 ### Threashold Monitoring
 
@@ -60,17 +59,16 @@ Both the 'system temperature' and 'disk space used' values & icons are colored b
 
 The default coloring is
 
-| **Value**/color       | from            | to                                          
-| ------------- | ------ | ------------------ 
-| **Storage Used** % ||
-| default| 0 | 60 
-| yellow| 61| 85 
-|red | 86 | 100 
-| **Temperature** C ||
-|default| 0 | 59 
-| yellow| 60 | 79 
-| red| 80 | 100 
-
+| **Value**/color    | from | to  |
+| ------------------ | ---- | --- |
+| **Storage Used** % |      |
+| default            | 0    | 60  |
+| yellow             | 61   | 85  |
+| red                | 86   | 100 |
+| **Temperature** C  |      |
+| default            | 0    | 59  |
+| yellow             | 60   | 79  |
+| red                | 80   | 100 |
 
 ### Severity Coloring
 
@@ -91,10 +89,9 @@ type: 'custom:rpi-monitor-card'
 entity: sensor.rpi-monitor-hostname
 card_style: glance
 temp_scale: f
-
 ```
 
-A 'full' card example (*with additional coloring override example*)
+A 'full' card example (_with additional coloring override example_)
 
 ```yaml
 type: 'custom:rpi-monitor-card'

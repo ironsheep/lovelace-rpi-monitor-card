@@ -19,6 +19,7 @@ export interface RPiMonitorCardConfig extends LovelaceCardConfig {
   fs_severity?: any;
   temp_severity?: any;
   temp_scale?: string;
+  name_prefix?: string;
 
   show_warning?: boolean;
   show_error?: boolean;

@@ -251,6 +251,9 @@ export class RPiMonitorCard extends LitElement {
   ];
 
   public setConfig(config: RPiMonitorCardConfig): void {
+    if (this._showDebug()) {
+      console.log('- setConfig()');
+    }
     // Optional: Check for required fields and that they are of the proper format
     if (!config || config.show_error) {
       throw new Error(localize('common.invalid_configuration'));
@@ -282,7 +285,7 @@ export class RPiMonitorCard extends LitElement {
     }
 
     this._config = {
-      name: 'RPi Monitor',
+      name: 'RPi Monitor Card',
       ...config,
     };
 
@@ -322,6 +325,9 @@ export class RPiMonitorCard extends LitElement {
 
   protected render(): TemplateResult | void {
     // Check for stateObj or other necessary things and render a warning if missing
+    if (this._showDebug()) {
+      console.log('- render()');
+    }
     if (this._config.show_warning) {
       return this.showWarning(localize('common.show_warning'));
     }
@@ -356,7 +362,9 @@ export class RPiMonitorCard extends LitElement {
       this._firstTime = false;
     }
 
-    const cardName = 'RPi monitor ' + this._getAttributeValueForKey(Constants.RPI_FQDN_KEY);
+    const rpi_fqdn = this._getAttributeValueForKey(Constants.RPI_FQDN_KEY);
+    const cardName =
+      this._config.name_prefix != undefined ? this._config.name_prefix + ' ' + rpi_fqdn : 'RPi monitor ' + rpi_fqdn;
 
     const card_timestamp_value = this._getRelativeTimeSinceUpdate();
 
@@ -428,6 +436,9 @@ export class RPiMonitorCard extends LitElement {
 
   // Here we need to refresh the rings and titles after it has been initially rendered
   protected updated(changedProps): void {
+    if (this._showDebug()) {
+      console.log('- updated()');
+    }
     if (!this._config) {
       return;
     }
@@ -485,7 +496,7 @@ export class RPiMonitorCard extends LitElement {
           const currLabelID = this._cardGlanceCssIDs[currName];
           const currAttrKey = this._cardGlanceElements[currName];
           const rawValue = this._getAttributeValueForKey(currAttrKey);
-          let latestValue = this._getAttributeValueForKey(currAttrKey);
+          let latestValue = this._getGlanceCardValueForAttributeKey(currAttrKey);
           if (currAttrKey == Constants.RPI_UP_TIME_KEY) {
             latestValue = this._filterUptime(latestValue);
           } else if (currAttrKey == Constants.RPI_LAST_UPDATE_KEY) {
@@ -709,10 +720,26 @@ export class RPiMonitorCard extends LitElement {
       sections.forEach(section => {
         if (numberValue >= section.from && numberValue <= section.to) {
           color = section.color;
+          const logMessage =
+            '_computeTemperatureColor() - value=[' +
+            value +
+            '] matched(from=' +
+            section.from +
+            ', to=' +
+            section.to +
+            ', color=' +
+            color +
+            ')';
+          if (this._showDebug()) {
+            console.log(logMessage);
+          }
         }
       });
     }
-
+    const logMessage = '_computeTemperatureColor() - value=[' + value + '] returns(color=' + color + ')';
+    if (this._showDebug()) {
+      console.log(logMessage);
+    }
     if (color == undefined) color = '';
     return color;
   }
@@ -738,8 +765,25 @@ export class RPiMonitorCard extends LitElement {
       sections.forEach(section => {
         if (numberValue >= section.from && numberValue <= section.to) {
           color = section.color;
+          const logMessage =
+            '_computeFileSystemUsageColor() - value=[' +
+            value +
+            '] matched(from=' +
+            section.from +
+            ', to=' +
+            section.to +
+            ', color=' +
+            color +
+            ')';
+          if (this._showDebug()) {
+            console.log(logMessage);
+          }
         }
       });
+    }
+    const logMessage = '_computeFileSystemUsageColor() - value=[' + value + '] returns(color=' + color + ')';
+    if (this._showDebug()) {
+      console.log(logMessage);
     }
 
     if (color == undefined) color = '';
@@ -862,26 +906,18 @@ export class RPiMonitorCard extends LitElement {
     for (const currName in this._cardGlanceElements) {
       const currAttributeKey = this._cardGlanceElements[currName];
       // Use `key` and `value`
-      const currValue = this._getAttributeValueForKey(currAttributeKey);
-      let interpValue = currValue;
+      const interpValue = this._getGlanceCardValueForAttributeKey(currAttributeKey);
       let currUnits = currName;
       if (currUnits == this.kREPLACE_WITH_TEMP_UNITS) {
         currUnits = this._getTemperatureScale();
-        interpValue = this._getScaledTemperatureValue(interpValue);
-      }
-      if (currAttributeKey == Constants.RPI_UP_TIME_KEY) {
-        interpValue = this._filterUptime(currValue);
       }
       let currIconName = this._cardGlanceIconNames[currName];
       if (currAttributeKey == Constants.RPI_FS_USED_PERCENT_KEY) {
-        currIconName = this._getIconNameForPercent(currValue);
+        currIconName = this._getIconNameForPercent(interpValue);
       }
       const currLabelCssID = this._cardGlanceCssIDs[currName];
       const currIconCssID = this._cardGlanceIconCssIDs[currName];
-      // if we have update date, let's carefully format it
-      if (currAttributeKey == Constants.RPI_LAST_UPDATE_KEY) {
-        interpValue = this._getUIDateForTimestamp(currValue);
-      }
+
       let scaleCssID = 'units';
       if (currAttributeKey == Constants.RPI_TEMPERATURE_IN_C_KEY) {
         scaleCssID = this.kClassIdTempScale;
@@ -900,7 +936,12 @@ export class RPiMonitorCard extends LitElement {
   }
 
   private _getTemperatureScale(): string {
-    return this._useTempsInC() == true ? 'ºC' : 'ºF';
+    const scaleInterp = this._useTempsInC() == true ? 'ºC' : 'ºF';
+    const logMessage = '_getTemperatureScale() scaleInterp=(' + scaleInterp + ')';
+    if (this._showDebug()) {
+      console.log(logMessage);
+    }
+    return scaleInterp;
   }
 
   private _getScaledTemperatureValue(temperature_raw: string): string {
@@ -908,6 +949,10 @@ export class RPiMonitorCard extends LitElement {
     if (this._useTempsInC() == false) {
       // if not inC convert to F
       interpValue = ((parseFloat(temperature_raw) * 9) / 5 + 32.0).toFixed(1);
+    }
+    const logMessage = '_getScaledTemperatureValue(' + temperature_raw + ') scaleInterp=(' + interpValue + ')';
+    if (this._showDebug()) {
+      console.log(logMessage);
     }
     return interpValue;
   }
@@ -949,6 +994,21 @@ export class RPiMonitorCard extends LitElement {
         namesArray.push('Bluetooth');
       }
       interpValue = namesArray.join(', ');
+    }
+    return interpValue;
+  }
+
+  private _getGlanceCardValueForAttributeKey(attrKey: string): string {
+    const latestValue = this._getAttributeValueForKey(attrKey);
+    let interpValue = latestValue;
+    if (attrKey == Constants.RPI_LAST_UPDATE_KEY) {
+      // regenerate the date value
+      interpValue = this._getUIDateForTimestamp(latestValue);
+    } else if (attrKey == Constants.RPI_TEMPERATURE_IN_C_KEY) {
+      // let's scale our temperature value
+      interpValue = this._getScaledTemperatureValue(latestValue);
+    } else if (attrKey == Constants.RPI_UP_TIME_KEY) {
+      interpValue = this._filterUptime(interpValue);
     }
     return interpValue;
   }
