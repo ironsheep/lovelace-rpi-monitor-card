@@ -496,12 +496,7 @@ export class RPiMonitorCard extends LitElement {
           const currLabelID = this._cardGlanceCssIDs[currName];
           const currAttrKey = this._cardGlanceElements[currName];
           const rawValue = this._getAttributeValueForKey(currAttrKey);
-          let latestValue = this._getGlanceCardValueForAttributeKey(currAttrKey);
-          if (currAttrKey == Constants.RPI_UP_TIME_KEY) {
-            latestValue = this._filterUptime(latestValue);
-          } else if (currAttrKey == Constants.RPI_LAST_UPDATE_KEY) {
-            latestValue = this._getUIDateForTimestamp(latestValue);
-          }
+          const latestValue = this._getGlanceCardValueForAttributeKey(currAttrKey);
           const labelElement = root.getElementById(currLabelID);
           labelElement.textContent = latestValue;
           const currIconCssID = this._cardGlanceIconCssIDs[currName];
