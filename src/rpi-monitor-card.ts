@@ -509,13 +509,16 @@ export class RPiMonitorCard extends LitElement {
             }
           }
           if (currAttrKey == Constants.RPI_TEMPERATURE_IN_C_KEY) {
-            const color = this._computeTemperatureColor(rawValue);
-            if (color != '') {
-              labelElement.style.setProperty('color', color);
-              iconElement.style.setProperty('color', color);
+            // don't place temp scale (C or F) when 'n/a'
+            if (latestValue != 'n/a') {
+              const color = this._computeTemperatureColor(rawValue);
+              if (color != '') {
+                labelElement.style.setProperty('color', color);
+                iconElement.style.setProperty('color', color);
+              }
+              const scaleLabelElement = root.getElementById(this.kClassIdTempScale);
+              scaleLabelElement.textContent = this._getTemperatureScale();
             }
-            const scaleLabelElement = root.getElementById(this.kClassIdTempScale);
-            scaleLabelElement.textContent = this._getTemperatureScale();
           }
         }
       }
@@ -793,7 +796,7 @@ export class RPiMonitorCard extends LitElement {
         const currPart = lineParts[index];
         if (currPart.includes(':')) {
           const timeParts = currPart.split(':');
-          const newPart = timeParts[0] + 'h:' + timeParts[0] + 'm';
+          const newPart = timeParts[0] + 'h:' + timeParts[1] + 'm';
           lineParts[index] = newPart;
         }
       }
@@ -904,7 +907,12 @@ export class RPiMonitorCard extends LitElement {
       const interpValue = this._getGlanceCardValueForAttributeKey(currAttributeKey);
       let currUnits = currName;
       if (currUnits == this.kREPLACE_WITH_TEMP_UNITS) {
-        currUnits = this._getTemperatureScale();
+        if (interpValue != 'n/a') {
+          currUnits = this._getTemperatureScale();
+        } else {
+          // when 'n/a' don't show units!
+          currUnits = '';
+        }
       }
       let currIconName = this._cardGlanceIconNames[currName];
       if (currAttributeKey == Constants.RPI_FS_USED_PERCENT_KEY) {
@@ -941,9 +949,11 @@ export class RPiMonitorCard extends LitElement {
 
   private _getScaledTemperatureValue(temperature_raw: string): string {
     let interpValue = temperature_raw;
-    if (this._useTempsInC() == false) {
-      // if not inC convert to F
-      interpValue = ((parseFloat(temperature_raw) * 9) / 5 + 32.0).toFixed(1);
+    if (interpValue != 'n/a') {
+      if (this._useTempsInC() == false) {
+        // if not inC convert to F
+        interpValue = ((parseFloat(temperature_raw) * 9) / 5 + 32.0).toFixed(1);
+      }
     }
     const logMessage = '_getScaledTemperatureValue(' + temperature_raw + ') scaleInterp=(' + interpValue + ')';
     if (this._showDebug()) {
@@ -960,9 +970,11 @@ export class RPiMonitorCard extends LitElement {
       interpValue = this._getUIDateForTimestamp(latestValue);
     } else if (attrKey == Constants.RPI_TEMPERATURE_IN_C_KEY) {
       // let's format our temperature value
-      const currUnits = this._getTemperatureScale();
       interpValue = this._getScaledTemperatureValue(latestValue);
-      interpValue = interpValue + ' ' + currUnits;
+      if (interpValue != 'n/a') {
+        const currUnits = this._getTemperatureScale();
+        interpValue = interpValue + ' ' + currUnits;
+      }
     } else if (attrKey == Constants.RPI_FS_TOTAL_GB_KEY) {
       // append our units
       interpValue = latestValue + ' GB';

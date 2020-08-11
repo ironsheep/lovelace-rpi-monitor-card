@@ -1,4 +1,4 @@
-export const CARD_VERSION = '1.2.1';
+export const CARD_VERSION = '1.2.3';
 
 /*
 *  EXAMPLE attributes
