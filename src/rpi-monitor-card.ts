@@ -363,8 +363,9 @@ export class RPiMonitorCard extends LitElement {
     }
 
     const rpi_fqdn = this._getAttributeValueForKey(Constants.RPI_FQDN_KEY);
-    const cardName =
+    let cardName =
       this._config.name_prefix != undefined ? this._config.name_prefix + ' ' + rpi_fqdn : 'RPi monitor ' + rpi_fqdn;
+    cardName = this._config.name != undefined ? this._config.name : cardName;
 
     const card_timestamp_value = this._getRelativeTimeSinceUpdate();
 
