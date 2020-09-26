@@ -34,16 +34,17 @@ If you don't use HACS please change the url accordingly.
 
 ## Configuration
 
-| Name          | Type   | Default            | Description                                                             |
-| ------------- | ------ | ------------------ | ----------------------------------------------------------------------- |
-| type          | string | **Required**       | `custom:rpi-monitor-card`                                               |
-| entity        | string | **Required**       | Entity State                                                            |
-| name          | string | none               | Overrides default title of the card. (Default: RPi Monitor {FQDN})      |
-| name_prefix   | string | 'RPi monitor'      | Overrides default name prefix(Default: 'RPi Monitor')                   |
-| card_style    | string | 'glance' or 'full' | Card layout desired for this RPi. (Default is full)                     |
-| temp_scale    | string | 'C' or 'F'         | Show Temperature in Celsius (C) or Fahrenheit (F). (Default is C)       |
-| fs_severity   | object | none               | A list of severity values. See [Severity Coloring](#severity-coloring). |
-| temp_severity | object | none               | A list of severity values. See [Severity Coloring](#severity-coloring). |
+| Name          | Type    | Default            | Description                                                             |
+| ------------- | ------- | ------------------ | ----------------------------------------------------------------------- |
+| type          | string  | **Required**       | `custom:rpi-monitor-card`                                               |
+| entity        | string  | **Required**       | Entity State                                                            |
+| name          | string  | none               | Overrides default title of the card. (Default: RPi Monitor {FQDN})      |
+| name_prefix   | string  | 'RPi monitor'      | Overrides default name prefix(Default: 'RPi Monitor')                   |
+| card_style    | string  | 'glance' or 'full' | Card layout desired for this RPi. (Default is full)                     |
+| temp_scale    | string  | 'C' or 'F'         | Show Temperature in Celsius (C) or Fahrenheit (F). (Default is C)       |
+| fs_severity   | object  | none               | A list of severity values. See [Severity Coloring](#severity-coloring). |
+| temp_severity | object  | none               | A list of severity values. See [Severity Coloring](#severity-coloring). |
+| show_title    | boolean | true               | Show / hide the Title for this card. (Default is show - 'true')         |
 
 ### Threashold Monitoring
 

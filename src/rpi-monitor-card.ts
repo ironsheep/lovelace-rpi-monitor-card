@@ -363,8 +363,18 @@ export class RPiMonitorCard extends LitElement {
 
     const rpi_fqdn = this._getAttributeValueForKey(Constants.RPI_FQDN_KEY);
     let cardName = 'RPi monitor ' + rpi_fqdn;
+
     cardName = this._config.name_prefix != undefined ? this._config.name_prefix + ' ' + rpi_fqdn : cardName;
     cardName = this._config.name != undefined ? this._config.name : cardName;
+
+    const showCardName = this._config.show_title != undefined ? this._config.show_title : true;
+    if (showCardName == false) {
+      cardName = '';
+    }
+
+    const last_heard_full_class = showCardName == false ? 'last-heard-full-notitle' : 'last-heard-full';
+
+    const last_heard_class = showCardName == false ? 'last-heard-notitle' : 'last-heard';
 
     const card_timestamp_value = this._getRelativeTimeSinceUpdate();
 
@@ -385,7 +395,7 @@ export class RPiMonitorCard extends LitElement {
         >
           <div id="states" class="card-content">
             ${fullRows}
-            <div id="card-timestamp" class="last-heard-full">${card_timestamp_value}</div>
+            <div id="card-timestamp" class=${last_heard_full_class}>${card_timestamp_value}</div>
           </div>
         </ha-card>
       `;
@@ -406,7 +416,7 @@ export class RPiMonitorCard extends LitElement {
         >
           <div class="content">
             ${glanceRows}
-            <div id="card-timestamp" class="last-heard">${card_timestamp_value}</div>
+            <div id="card-timestamp" class=${last_heard_class}>${card_timestamp_value}</div>
           </div>
         </ha-card>
       `;
@@ -1139,6 +1149,20 @@ export class RPiMonitorCard extends LitElement {
         position: absolute;
         top: 55px;
         right: 30px;
+        font-size: 12px;
+        color: var(--primary-text-color);
+      }
+      .last-heard-full-notitle {
+        position: absolute;
+        top: 3px;
+        right: 30px;
+        font-size: 12px;
+        color: var(--primary-text-color);
+      }
+      .last-heard-notitle {
+        position: absolute;
+        bottom: 5px;
+        right: 90px;
         font-size: 12px;
         color: var(--primary-text-color);
       }
