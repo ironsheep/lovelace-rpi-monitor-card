@@ -20,11 +20,13 @@ This is a Lovelace card showing you the status of one of the Raspberry Pi's on y
 
 Place one of these cards for each of your RPi's on your network (and install the sensor/daemon script on each RPi) and you can monitor your entire constellation of RPi's "at a glance"!
 
---
+----
 
 If you like my work and/or this has helped you in some way then feel free to help me out for a couple of :coffee:'s or :pizza: slices!
 
 [![coffee](https://www.buymeacoffee.com/assets/img/custom_images/black_img.png)](https://www.buymeacoffee.com/ironsheep)
+
+----
 
 ## Installation
 
