@@ -2,6 +2,7 @@
   "common": {
     "version": "Version",
     "invalid_configuration": "configuración no válida",
-    "show_warning": "Mostrar advertencia"
+    "show_warning": "Mostrar advertencia",
+    "show_error": "Mostrar error"
   }
 }

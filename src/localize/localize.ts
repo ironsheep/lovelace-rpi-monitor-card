@@ -1,16 +1,19 @@
 import * as en from './languages/en.json';
 import * as nb from './languages/nb.json';
+import * as es from './languages/es.json';
 
-var languages: any = {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const languages: any = {
   en: en,
+  es: es,
   nb: nb,
 };
 
-export function localize(string: string, search: string = '', replace: string = '') {
-
+// eslint-disable-next-line @typescript-eslint/no-inferrable-types
+export function localize(string: string, search: string = '', replace: string = ''): string {
   const lang = (localStorage.getItem('selectedLanguage') || 'en').replace(/['"]+/g, '').replace('-', '_');
 
-  var translated: string;
+  let translated: string;
 
   try {
     translated = string.split('.').reduce((o, i) => o[i], languages[lang]);
