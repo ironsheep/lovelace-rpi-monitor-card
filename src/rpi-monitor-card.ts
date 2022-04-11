@@ -69,6 +69,7 @@ export class RPiMonitorCard extends LitElement {
     // top to bottom
     Storage: Constants.RPI_FS_TOTAL_GB_KEY,
     'Storage Use': Constants.RPI_FS_USED_PERCENT_KEY,
+    'Memory Use': Constants.RPI_MEMORY_USED_PERCENT_KEY,
     Updated: Constants.RPI_LAST_UPDATE_KEY,
     Temperature: Constants.RPI_TEMPERATURE_IN_C_KEY,
     'Up-time': Constants.RPI_UP_TIME_KEY,
@@ -80,6 +81,7 @@ export class RPiMonitorCard extends LitElement {
     // top to bottom
     Storage: 'sd',
     'Storage Use': 'file-percent',
+    'Memory Use' : 'memory',
     Updated: 'update',
     Temperature: 'thermometer',
     'Up-time': 'clock-check-outline',
@@ -115,6 +117,7 @@ export class RPiMonitorCard extends LitElement {
     // top to bottom
     Storage: this.kClassIdFSTotal,
     'Storage Use': this.kClassIdFSAvail,
+    'Memory Use': this.kClassIdMemoryUsage,
     Updated: this.kClassIdUpdated,
     Temperature: this.kClassIdSysTemp,
     'Up-time': this.kClassIdUptime,
@@ -126,6 +129,7 @@ export class RPiMonitorCard extends LitElement {
     // top to bottom
     Storage: this.kClassIdIconFSTotal,
     'Storage Use': this.kClassIdIconFSAvail,
+    'Memory Use' : this.kClassIdIconMemoryUsage,
     Updated: this.kClassIdIconUpdated,
     Temperature: this.kClassIdIconSysTemp,
     'Up-time': this.kClassIdIconUptime,
@@ -255,6 +259,26 @@ export class RPiMonitorCard extends LitElement {
       to: 100,
     },
   ];
+
+  // DEFAULT coloring for used memory
+  //  user sets 'memory_severity' to override
+  private _colorUsedMemoryDefault = [
+    {
+      color: 'undefined',
+      from: 0,
+      to: 59,
+    },
+    {
+      color: 'yellow',
+      from: 60,
+      to: 84,
+    },
+    {
+      color: 'red',
+      from: 85,
+      to: 100,
+    },
+  ];  
 
   public setConfig(config: RPiMonitorCardConfig): void {
     if (this._showDebug()) {
@@ -498,6 +522,13 @@ export class RPiMonitorCard extends LitElement {
               iconElement.style.setProperty('color', color);
             }
           }
+          if (currAttrKey == Constants.RPI_MEMORY_USED_PERCENT_KEY) {
+            const color = this._computeMemoryUsageColor(rawValue);
+            if (color != '') {
+              labelElement.style.setProperty('color', color);
+              iconElement.style.setProperty('color', color);
+            }
+          }          
           if (currAttrKey == Constants.RPI_TEMPERATURE_IN_C_KEY) {
             const color = this._computeTemperatureColor(rawValue);
             if (color != '') {
@@ -519,6 +550,13 @@ export class RPiMonitorCard extends LitElement {
           const iconElement = root.getElementById(currIconCssID);
           if (currAttrKey == Constants.RPI_FS_USED_PERCENT_KEY) {
             const color = this._computeFileSystemUsageColor(rawValue);
+            if (color != '') {
+              labelElement.style.setProperty('color', color);
+              iconElement.style.setProperty('color', color);
+            }
+          }
+          if (currAttrKey == Constants.RPI_MEMORY_USED_PERCENT_KEY) {
+            const color = this._computeMemoryUsageColor(rawValue);
             if (color != '') {
               labelElement.style.setProperty('color', color);
               iconElement.style.setProperty('color', color);
@@ -796,6 +834,48 @@ export class RPiMonitorCard extends LitElement {
       });
     }
     const logMessage = '_computeFileSystemUsageColor() - value=[' + value + '] returns(color=' + color + ')';
+    if (this._showDebug()) {
+      console.log(logMessage);
+    }
+
+    if (color == undefined) color = '';
+    return color;
+  }
+
+  private _computeMemoryUsageColor(value: string): string {
+    const config = this._config;
+    const numberValue = Number(value);
+    const sections = config.memory_severity ? config.memory_severity : this._colorUsedMemoryDefault;
+
+    let color: undefined | string;
+
+    if (isNaN(numberValue)) {
+      sections.forEach(section => {
+        if (value == section.text) {
+          color = section.color;
+        }
+      });
+    } else {
+      sections.forEach(section => {
+        if (numberValue >= section.from && numberValue <= section.to) {
+          color = section.color;
+          const logMessage =
+            '_computeMemoryUsageColor() - value=[' +
+            value +
+            '] matched(from=' +
+            section.from +
+            ', to=' +
+            section.to +
+            ', color=' +
+            color +
+            ')';
+          if (this._showDebug()) {
+            console.log(logMessage);
+          }
+        }
+      });
+    }
+    const logMessage = '_computeMemoryUsageColor() - value=[' + value + '] returns(color=' + color + ')';
     if (this._showDebug()) {
       console.log(logMessage);
     }
