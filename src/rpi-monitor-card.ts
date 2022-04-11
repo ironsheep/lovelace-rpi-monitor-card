@@ -97,6 +97,7 @@ export class RPiMonitorCard extends LitElement {
   private kClassIdIconOS = 'ico-*nix';
   private kClassIdIconRPiModel = 'ico-rpi-model';
   private kClassIdIconInterfaces = 'ico-rpi-ifaces';
+  private kClassIdIconMemoryUsage = 'ico-memory-percent';
   // attribute value label IDs
   private kClassIdFSAvail = 'fs-percent';
   private kClassIdFSTotal = 'fs-total';
@@ -106,6 +107,7 @@ export class RPiMonitorCard extends LitElement {
   private kClassIdOS = '*nix';
   private kClassIdRPiModel = 'rpi-model';
   private kClassIdInterfaces = 'rpi-ifaces';
+  private kClassIdMemoryUsage = 'memory-percent';
   // ond one special for unit
   private kClassIdTempScale = 'sys-temp-scale';
 
@@ -138,6 +140,7 @@ export class RPiMonitorCard extends LitElement {
     // left to right
     '%': Constants.RPI_FS_USED_PERCENT_KEY,
     GB: Constants.RPI_FS_TOTAL_GB_KEY,
+    Mem: Constants.RPI_MEMORY_USED_PERCENT_KEY,
     'replace-with-temp-units': Constants.RPI_TEMPERATURE_IN_C_KEY,
     UpTime: Constants.RPI_UP_TIME_KEY,
     Upd: Constants.RPI_LAST_UPDATE_KEY,
@@ -146,6 +149,7 @@ export class RPiMonitorCard extends LitElement {
     // left to right
     '%': 'file-percent',
     GB: 'sd',
+    Mem: 'memory',
     'replace-with-temp-units': 'thermometer',
     UpTime: 'clock-check-outline',
     Upd: 'update',
@@ -155,6 +159,7 @@ export class RPiMonitorCard extends LitElement {
     // left to right
     '%': this.kClassIdFSAvail,
     GB: this.kClassIdFSTotal,
+    Mem: this.kClassIdMemoryUsage,
     'replace-with-temp-units': this.kClassIdSysTemp,
     UpTime: this.kClassIdUptime,
     Upd: this.kClassIdUpdated,
@@ -164,6 +169,7 @@ export class RPiMonitorCard extends LitElement {
     // left to right
     '%': this.kClassIdIconFSAvail,
     GB: this.kClassIdIconFSTotal,
+    Mem: this.kClassIdIconMemoryUsage,
     'replace-with-temp-units': this.kClassIdIconSysTemp,
     UpTime: this.kClassIdIconUptime,
     Upd: this.kClassIdIconUpdated,

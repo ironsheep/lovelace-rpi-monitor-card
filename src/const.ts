@@ -52,3 +52,5 @@ export const SHOW_OS_PARTS_VALUE = 'show-os-parts';
 
 export const RPI_IP_NTWK_KEY = 'IP';
 export const RPI_MAC_NTWK_KEY = 'mac';
+
+export const RPI_MEMORY_USED_PERCENT_KEY = 'memory_percent';
