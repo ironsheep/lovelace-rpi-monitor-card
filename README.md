@@ -83,13 +83,13 @@ The default coloring is
 
 ### Example card specifications
 
-**NOTE**: this card must always be attached to the 'sensor.rpi-monitor-{hostname}' sensor, **the other two sensors from the same RPi will not work to drive this card!**
+**NOTE**: this card must always be attached to the 'sensor.rpi_monitor_{hostname}' sensor, **the other two sensors from the same RPi will not work to drive this card!**
 
 A 'glance' card example
 
 ```yaml
 type: 'custom:rpi-monitor-card'
-entity: sensor.rpi-monitor-hostname
+entity: sensor.rpi_monitor_hostname
 card_style: glance
 temp_scale: f
 ```
@@ -98,7 +98,7 @@ A 'full' card example (_with additional coloring override example_)
 
 ```yaml
 type: 'custom:rpi-monitor-card'
-entity: sensor.rpi-monitor-hostname
+entity: sensor.rpi_monitor_hostname
 card_style: full
 temp_scale: C
 fs_severity:
