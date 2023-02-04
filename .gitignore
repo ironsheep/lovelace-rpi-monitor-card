@@ -3,3 +3,9 @@
 package-lock.json
 /dist
 .DS_Store
+yarn-REF.lock
+yarn-000.lock
+yarn-009.lock
+package-009.json
+package-000.json
+package-lock-001.json
