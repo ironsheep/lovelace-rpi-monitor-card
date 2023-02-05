@@ -1,34 +1,56 @@
-export const CARD_VERSION = '1.2.5';
+export const CARD_VERSION = '1.2.8';
 
 /*
-*  EXAMPLE attributes
+*  EXAMPLE attributes  ISP-RPi-mqtt-daemon.py v1.5.4
 {
   "info": {
-    "timestamp": "2020-07-19T13:17:54-06:00",
-    "rpi_model": "RPi 3 Model B r1.2",
-    "ifaces": "e,w,b",
-    "host_name": "pi3plus",
-    "fqdn": "pi3plus.home",
-    "ux_release": "stretch",
-    "ux_version": "4.19.66-v7+",
-    "up_time": "13:17:54 up 14 days",
-    "last_update": "2020-07-18T00:51:36-06:00",
-    "fs_total_gb": 64,
-    "fs_free_prcnt": 10,
+    "timestamp": "2021-05-18T18:17:52-06:00",
+    "rpi_model": "RPi 2 Model B r1.1",
+    "ifaces": "e",
+    "host_name": "pinode1",
+    "fqdn": "pinode1.home",
+    "ux_release": "jessie",
+    "ux_version": "4.9.35-v7+",
+    "up_time": " 4:55",
+    "last_update": "2021-05-18T14:39:58-06:00",
+    "fs_total_gb": 32,
+    "fs_free_prcnt": 19,
     "networking": {
       "eth0": {
-        "mac": "b8:27:eb:1a:f3:bc"
-      },
-      "wlan0": {
-        "IP": "192.168.100.189",
-        "mac": "b8:27:eb:4f:a6:e9"
+        "mac": "b8:27:eb:b0:9c:3b",
+        "IP": "192.168.100.42"
       }
     },
-    "temperature_c": 55.3,
-    "reporter": "ISP-RPi-mqtt-daemon v0.8.5"
+    "drives": {
+      "root": {
+        "size_gb": 32,
+        "used_prcnt": 19,
+        "device": "/dev/root",
+        "mount_pt": "/"
+      }
+    },
+    "memory": {
+      "size_mb": "923.355",
+      "free_mb": "795.066"
+    },
+    "cpu": {
+      "hardware": "BCM2835",
+      "model": "ARMv7 Processor rev 5 (v7l)",
+      "number_cores": 4,
+      "bogo_mips": "230.40",
+      "serial": "00000000bab09c3b"
+    },
+    "throttle": [
+      "throttled = 0x0",
+      "Not throttled"
+    ],
+    "temperature_c": 40.1,
+    "temp_gpu_c": 40.1,
+    "temp_cpu_c": 40.1,
+    "reporter": "ISP-RPi-mqtt-daemon v1.5.4",
+    "report_interval": 5
   }
-}
-*/
+}*/
 
 export const RPI_TOP_KEY = 'info';
 

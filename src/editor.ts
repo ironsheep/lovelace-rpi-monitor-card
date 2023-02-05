@@ -1,7 +1,9 @@
-import { LitElement, html, customElement, property, TemplateResult, CSSResult, css } from 'lit-element';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { LitElement, html, TemplateResult, css, CSSResultGroup } from 'lit';
 import { HomeAssistant, fireEvent, LovelaceCardEditor, ActionConfig } from 'custom-card-helpers';
 
 import { RPiMonitorCardConfig } from './types';
+import { customElement, property, state } from 'lit/decorators.js';
 
 const options = {
   required: {
@@ -46,77 +48,64 @@ const options = {
 
 @customElement('rpi-monitor-card-editor')
 export class RPiMonitorCardEditor extends LitElement implements LovelaceCardEditor {
-  @property() public hass?: HomeAssistant;
-  @property() private _config?: RPiMonitorCardConfig;
-  @property() private _toggle?: boolean;
+  @property({ attribute: false }) public hass?: HomeAssistant;
+  @state() private _config?: RPiMonitorCardConfig;
+  @state() private _toggle?: boolean;
+  @state() private _helpers?: any;
+  private _initialized = false;
 
   public setConfig(config: RPiMonitorCardConfig): void {
     this._config = config;
+
+    this.loadCardHelpers();
+  }
+
+  protected shouldUpdate(): boolean {
+    if (!this._initialized) {
+      this._initialize();
+    }
+
+    return true;
   }
 
   get _name(): string {
-    if (this._config) {
-      return this._config.name || '';
-    }
-
-    return '';
+    return this._config?.name || '';
   }
 
   get _entity(): string {
-    if (this._config) {
-      return this._config.entity || '';
-    }
-
-    return '';
+    return this._config?.entity || '';
   }
 
   get _show_warning(): boolean {
-    if (this._config) {
-      return this._config.show_warning || false;
-    }
-
-    return false;
+    return this._config?.show_warning || false;
   }
 
   get _show_error(): boolean {
-    if (this._config) {
-      return this._config.show_error || false;
-    }
-
-    return false;
+    return this._config?.show_error || false;
   }
 
   get _tap_action(): ActionConfig {
-    if (this._config) {
-      return this._config.tap_action || { action: 'more-info' };
-    }
-
-    return { action: 'more-info' };
+    return this._config?.tap_action || { action: 'more-info' };
   }
 
   get _hold_action(): ActionConfig {
-    if (this._config) {
-      return this._config.hold_action || { action: 'none' };
-    }
-
-    return { action: 'none' };
+    return this._config?.hold_action || { action: 'none' };
   }
 
   get _double_tap_action(): ActionConfig {
-    if (this._config) {
-      return this._config.double_tap_action || { action: 'none' };
-    }
-
-    return { action: 'none' };
+    return this._config?.double_tap_action || { action: 'none' };
   }
 
   protected render(): TemplateResult | void {
-    if (!this.hass) {
+    if (!this.hass || !this._helpers) {
       return html``;
     }
 
+    // The climate more-info has ha-switch and paper-dropdown-menu elements that are lazy loaded unless explicitly done here
+    this._helpers.importMoreInfoControl('climate');
+
     // You can restrict on domain type
-    const entities = Object.keys(this.hass.states).filter(eid => eid.substr(0, eid.indexOf('.')) === 'sun');
+    const entities = Object.keys(this.hass.states).filter((eid) => eid.substr(0, eid.indexOf('.')) === 'sun');
 
     return html`
       <div class="card-config">
@@ -136,10 +125,8 @@ export class RPiMonitorCardEditor extends LitElement implements LovelaceCardEdit
                   .configValue=${'entity'}
                 >
                   <paper-listbox slot="dropdown-content" .selected=${entities.indexOf(this._entity)}>
-                    ${entities.map(entity => {
-                      return html`
-                        <paper-item>${entity}</paper-item>
-                      `;
+                    ${entities.map((entity) => {
+                      return html` <paper-item>${entity}</paper-item> `;
                     })}
                   </paper-listbox>
                 </paper-dropdown-menu>
@@ -218,25 +205,36 @@ export class RPiMonitorCardEditor extends LitElement implements LovelaceCardEdit
                   @value-changed=${this._valueChanged}
                 ></paper-input>
                 <br />
-                <ha-switch
-                  aria-label=${`Toggle warning ${this._show_warning ? 'off' : 'on'}`}
-                  .checked=${this._show_warning !== false}
-                  .configValue=${'show_warning'}
-                  @change=${this._valueChanged}
-                  >Show Warning?</ha-switch
-                >
-                <ha-switch
-                  aria-label=${`Toggle error ${this._show_error ? 'off' : 'on'}`}
-                  .checked=${this._show_error !== false}
-                  .configValue=${'show_error'}
-                  @change=${this._valueChanged}
-                  >Show Error?</ha-switch
-                >
+                <ha-formfield .label=${`Toggle warning ${this._show_warning ? 'off' : 'on'}`}>
+                  <ha-switch
+                    .checked=${this._show_warning !== false}
+                    .configValue=${'show_warning'}
+                    @change=${this._valueChanged}
+                  ></ha-switch>
+                </ha-formfield>
+                <ha-formfield .label=${`Toggle error ${this._show_error ? 'off' : 'on'}`}>
+                  <ha-switch
+                    .checked=${this._show_error !== false}
+                    .configValue=${'show_error'}
+                    @change=${this._valueChanged}
+                  ></ha-switch>
+                </ha-formfield>
               </div>
             `
           : ''}
       </div>
     `;
+  }
+
+  private _initialize(): void {
+    if (this.hass === undefined) return;
+    if (this._config === undefined) return;
+    if (this._helpers === undefined) return;
+    this._initialized = true;
+  }
+
+  private async loadCardHelpers(): Promise<void> {
+    this._helpers = await (window as any).loadCardHelpers();
   }
 
   private _toggleAction(ev): void {
@@ -266,7 +264,9 @@ export class RPiMonitorCardEditor extends LitElement implements LovelaceCardEdit
     }
     if (target.configValue) {
       if (target.value === '') {
-        delete this._config[target.configValue];
+        const tmpConfig = { ...this._config };
+        delete tmpConfig[target.configValue];
+        this._config = tmpConfig;
       } else {
         this._config = {
           ...this._config,
@@ -277,7 +277,7 @@ export class RPiMonitorCardEditor extends LitElement implements LovelaceCardEdit
     fireEvent(this, 'config-changed', { config: this._config });
   }
 
-  static get styles(): CSSResult {
+  static get styles(): CSSResultGroup {
     return css`
       .option {
         padding: 4px 0px;
@@ -301,8 +301,9 @@ export class RPiMonitorCardEditor extends LitElement implements LovelaceCardEdit
       .values {
         padding-left: 16px;
         background: var(--secondary-background-color);
+        display: grid;
       }
-      ha-switch {
+      ha-formfield {
         padding-bottom: 8px;
       }
     `;

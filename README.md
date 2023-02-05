@@ -54,7 +54,11 @@ If you don't use HACS please change the url accordingly.
 | temp_scale    | string  | 'C' or 'F'         | Show Temperature in Celsius (C) or Fahrenheit (F). (Default is C)       |
 | fs_severity   | object  | none               | A list of severity values. See [Severity Coloring](#severity-coloring). |
 | temp_severity | object  | none               | A list of severity values. See [Severity Coloring](#severity-coloring). |
+| memory_severity | object  | none               | A list of severity values. See [Severity Coloring](#severity-coloring). |
+| os_age | object  | none               | A list of os name and color values. See [OS Coloring](#os-coloring). |
 | show_title    | boolean | true               | Show / hide the Title for this card. (Default is show - 'true')         |
+| show\_os_age    | boolean | true               | Show / hide the os release name (Default is show - 'true')         |
+| show\_update_age    | boolean | true               | Show / hide time since last values reported for this card. (Default is show - 'true')         |
 
 ### Threashold Monitoring
 
@@ -64,14 +68,27 @@ The default coloring is
 
 | **Value**/color    | from | to  |
 | ------------------ | ---- | --- |
-| **Storage Used** % |      |
+| **Storage Used** % |      |     |
 | default            | 0    | 60  |
 | yellow             | 61   | 85  |
 | red                | 86   | 100 |
-| **Temperature** C  |      |
+| **Temperature** C  |      |     |
 | default            | 0    | 59  |
 | yellow             | 60   | 79  |
 | red                | 80   | 100 |
+| **Memory Free %**  |      |     |
+| red                | 0    | 25  |
+| yellow             | 26   | 50  |
+| {default color}    | 51   | 100 |
+
+| **Value**/color    | Release | Exp. Date  |
+| ------------------ | ---- | --- |
+| **OS Release**     |    
+| red                | wheezy  |  31 May 2018 |
+| red                | jessie  | 30 June 2020 |
+| red                | stretch | 30 June 2022 |
+
+**NOTE:** The release colors are based on when the named released reaches [end of support](https://en.wikipedia.org/wiki/Debian_version_history)  When a release reaches end of support we no longer get security updates. It is best to simply move to the current release (or last release supporting your RPi version) when this happens.  These color flags on the OS release let us know when we should be thinking about building a new OS image for the affected RPi.
 
 ### Severity Coloring
 
@@ -79,7 +96,14 @@ The default coloring is
 | ----- | ------ | ------------ | ------------------------------------------------------- |
 | from  | number | **Required** | Defines from which value the color should be displayed. |
 | to    | number | **Required** | Defines to which value the color should be displayed.   |
-| color | array  | **Required** | Defines the color to be displayed.                      |
+| color | string  | **Required** | Defines the color to be displayed.                   |
+
+### OS Coloring
+
+| Name  | Type   | Default      | Description                                             |
+| ----- | ------ | ------------ | ------------------------------------------------------- |
+| os    | string | **Required** | Defines for which named release this color is displayed (e.g., 'buster', 'stretch')  |
+| color | string | **Required** | Defines the color to be displayed.                      |
 
 ### Example card specifications
 
@@ -120,7 +144,7 @@ fs_severity:
 
 ## License
 
-Copyright © 2020 Iron Sheep Productions, LLC. All rights reserved.<br />
+Copyright © 2022 Iron Sheep Productions, LLC. All rights reserved.<br />
 Licensed under the MIT License. <br>
 <br>
 Follow these links for more information:

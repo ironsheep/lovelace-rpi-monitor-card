@@ -25,6 +25,7 @@ const plugins = [
   json(),
   babel({
     exclude: 'node_modules/**',
+    babelHelpers: 'runtime',
   }),
   dev && serve(serveopts),
   !dev && terser(),
