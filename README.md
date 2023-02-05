@@ -62,7 +62,7 @@ If you don't use HACS please change the url accordingly.
 
 ### Threashold Monitoring
 
-Both the 'system temperature' and 'disk space used' values & icons are colored by threshold. The following defaults can be overridden for each card (each RPi.)
+The `system temperature`, `disk space used` and `memory used` values & icons are colored by threshold. The following defaults can be overridden for each card (each RPi.)
 
 The default coloring is
 
@@ -76,10 +76,14 @@ The default coloring is
 | default            | 0    | 59  |
 | yellow             | 60   | 79  |
 | red                | 80   | 100 |
-| **Memory Free %**  |      |     |
-| red                | 0    | 25  |
-| yellow             | 26   | 50  |
-| {default color}    | 51   | 100 |
+| **Memory Used %**  |      |     |
+| default            | 0    | 60  |
+| yellow             | 61   | 74  |
+| red                | 75   | 100 |
+
+The OS release name is also colored by expiration of support. The following defaults can be overridden for each card (each RPi.) with `red` meaning the named released is no longer supported / is not getting updates any longer.
+
+The default release coloring is
 
 | **Value**/color    | Release | Exp. Date  |
 | ------------------ | ---- | --- |
