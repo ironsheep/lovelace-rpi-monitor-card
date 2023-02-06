@@ -1102,8 +1102,8 @@ export class RPiMonitorCard extends LitElement {
             <div class="icon-holder">
               <ha-icon id="${currIconCssID}" class="attr-icon-full pointer" icon="mdi:${currIconName}"></ha-icon>
             </div>
-            <div class="info pointer text-content attr-value">${currName}</div>
-            <div id="${currLabelCssID}" class="text-content right uom">${interpValue}</div>
+            <div class="text-content uom">${currName}</div>
+            <div id="${currLabelCssID}" class="info pointer text-content right attr-value">${interpValue}</div>
           </rpi-attribute-row>
         </div>
       `);
