@@ -1,4 +1,4 @@
-name: "Build"
+name: 'Build'
 
 on:
   push:
@@ -13,7 +13,7 @@ jobs:
     name: Test build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v3
       - name: Build
         run: |
           npm install
