@@ -873,6 +873,7 @@ export class RPiMonitorCard extends LitElement {
     //console.log('LDRI retrievedText=[' + retrievedText + ']');
     let foundVersions: string[] = [];
     if (retrievedText) {
+      foundVersions = []; // silence FALSE! compiler-detect error
       const lines: string[] = retrievedText.split('\n');
       //console.log('FAR lines=[' + lines + '](' + lines.length + ')');
       for (let index: number = 0; index < lines.length; index++) {
