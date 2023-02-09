@@ -58,7 +58,12 @@ If you don't use HACS please change the url accordingly.
 | os_age | object  | none               | A list of os name and color values. See [OS Coloring](#os-coloring). |
 | show_title    | boolean | true               | Show / hide the Title for this card. (Default is show - 'true')         |
 | show\_os_age    | boolean | true               | Show / hide the os release name (Default is show - 'true')         |
-| show\_update_age    | boolean | true               | Show / hide time since last values reported for this card. (Default is show - 'true')         |
+| show\_update_age    | boolean | true               | Show / hide time since last values reported for this card. (Default is show - 'true')         | os_age        | object  | none               | A list of os name and color values. See [OS Coloring](#os-coloring).    |
+| show_title    | boolean | true               | Show / hide the Title for this card. (Default is show - 'true')         |
+| show\_os_age    | boolean | true             | Show / hide the os release name (Default is show - 'true')              |
+| show\_update_age | boolean | true            | Show / hide time since last values reported for this card. (Default is show - 'true')|
+| show\_daemon_upd | boolean | true            | Show / hide Daemon update needed flag. (Default is show - 'true')       |
+
 
 ### Threashold Monitoring
 
@@ -93,6 +98,11 @@ The default release coloring is
 | red                | stretch | 30 June 2022 |
 
 **NOTE:** The release colors are based on when the named released reaches [end of support](https://en.wikipedia.org/wiki/Debian_version_history)  When a release reaches end of support we no longer get security updates. It is best to simply move to the current release (or last release supporting your RPi version) when this happens.  These color flags on the OS release let us know when we should be thinking about building a new OS image for the affected RPi.
+
+### RPi Daemon update available coloring
+
+The Daemon update needed flag is colored according to version being run vs. the latest release. If the version being run is one back from the latest, the update is colored yellow. If current version is not in the list of most recent versions then it update is colored red. There is currently no override for this coloring.
+
 
 ### Severity Coloring
 

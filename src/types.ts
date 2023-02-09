@@ -46,6 +46,7 @@ export interface RPiMonitorCardConfig extends LovelaceCardConfig {
   // following are on by default:  set to false to disable
   show_os_age?: boolean;
   show_update_age?: boolean;
+  show_daemon_upd?: boolean;
 
   show_warning?: boolean;
   show_error?: boolean;

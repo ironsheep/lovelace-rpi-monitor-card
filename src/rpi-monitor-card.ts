@@ -65,7 +65,7 @@ export class RPiMonitorCard extends LitElement {
   private kREPLACE_WITH_TEMP_UNITS: string = 'replace-with-temp-units';
   private kMQTT_DAEMON_RELEASE_URL: string =
     'https://raw.githubusercontent.com/ironsheep/RPi-Reporter-MQTT2HA-Daemon/master/Release';
-  private latestDaemonVersions: string[] = ['v1.6.2', 'v1.6.1']; // REMOVE BEFORE FLIGHT (TEST DATA)
+  private latestDaemonVersions: string[] = ['v1.6.1', 'v1.6.0']; // REMOVE BEFORE FLIGHT (TEST DATA)
   private currentDaemonVersion: string = '';
 
   // WARNING set following to false before commit!
@@ -470,35 +470,23 @@ export class RPiMonitorCard extends LitElement {
     const showOsAge = this._config.show_os_age != undefined ? this._config.show_os_age : true;
     // Card Update Age is shown (default = True) unless turned off
     const showCardAge = this._config.show_update_age != undefined ? this._config.show_update_age : true;
+    const showDaemonUpdNeed = this._config.show_daemon_upd != undefined ? this._config.show_daemon_upd : true;
+    const showCardName = this._config.show_title != undefined ? this._config.show_title : true;
 
     const rpi_fqdn: string = this._getAttributeValueForKey(Constants.RPI_FQDN_KEY);
-    let cardName: string = 'RPi monitor ' + rpi_fqdn;
     const ux_release: string = showOsAge == true ? this._getAttributeValueForKey(Constants.RPI_NIX_RELEASE_KEY) : '';
-    let daemon_update_status: string = '';
 
+    const daemon_update_status: string = showDaemonUpdNeed
+      ? this._calculateDaemonUpdMessage(this.currentDaemonVersion)
+      : '';
+    const card_timestamp = showCardAge == true ? this._cardUpdateString : '';
+
+    let cardName: string = 'RPi monitor ' + rpi_fqdn;
     cardName = this._config.name_prefix != undefined ? this._config.name_prefix + ' ' + rpi_fqdn : cardName;
     cardName = this._config.name != undefined ? this._config.name : cardName;
 
-    const showCardName = this._config.show_title != undefined ? this._config.show_title : true;
     if (showCardName == false) {
       cardName = '';
-    }
-
-    if (this._showDebug()) {
-      console.log('- RNDR currentDaemonVersion=[' + this.currentDaemonVersion + ']');
-      console.log('- RNDR latestDaemonVersions=[' + this.latestDaemonVersions + ']');
-    }
-    if (this.latestDaemonVersions.length > 0 && this.currentDaemonVersion != '') {
-      if (this.currentDaemonVersion != this.latestDaemonVersions[0]) {
-        // reporter version is not latest
-        daemon_update_status = this.currentDaemonVersion + ' -- (' + this.latestDaemonVersions[0] + ' avail.)';
-      }
-    } else {
-      if (this.currentDaemonVersion != '') {
-        daemon_update_status = this.currentDaemonVersion + ' {no info avail.}';
-      } else {
-        daemon_update_status = 'v?.?.? {no info avail.}';
-      }
     }
 
     const last_heard_full_class = showCardName == false ? 'last-heard-full-notitle' : 'last-heard-full';
@@ -509,8 +497,6 @@ export class RPiMonitorCard extends LitElement {
 
     const daemon_update_full_class = showCardName == false ? 'daemon-update-full-notitle' : 'daemon-update-full';
     const daemon_update_class = showCardName == false ? 'daemon-update-notitle' : 'daemon-update';
-
-    const card_timestamp = showCardAge == true ? this._cardUpdateString : '';
 
     if (this._useFullCard()) {
       // our FULL card
@@ -567,46 +553,6 @@ export class RPiMonitorCard extends LitElement {
         </ha-card>
       `;
     }
-  }
-
-  private prettyDate(time: string): string {
-    const date: Date = new Date((time || '').replace(/-/g, '/').replace(/[TZ]/g, ' '));
-    const diff: number = (new Date().getTime() - date.getTime()) / 1000;
-    const day_diff: number = Math.floor(diff / 86400);
-    const year: number = date.getFullYear();
-    const month: number = date.getMonth() + 1;
-    const day: number = date.getDate();
-
-    if (isNaN(day_diff) || day_diff < 0 || day_diff >= 31)
-      return (
-        year.toString() +
-        '-' +
-        (month < 10 ? '0' + month.toString() : month.toString()) +
-        '-' +
-        (day < 10 ? '0' + day.toString() : day.toString())
-      );
-
-    let rslt: string = '{unknown}';
-    if (day_diff == 0) {
-      if (diff < 60) {
-        rslt = 'just now';
-      } else if (diff < 120) {
-        rslt = '1 minute ago';
-      } else if (diff < 3600) {
-        rslt = Math.floor(diff / 60) + ' minutes ago';
-      } else if (diff < 7200) {
-        rslt = '1 hour ago';
-      } else if (diff < 86400) {
-        rslt = Math.floor(diff / 3600) + ' hours ago';
-      }
-    } else if (day_diff == 1) {
-      rslt = 'Yesterday';
-    } else if (day_diff < 7) {
-      rslt = day_diff + ' days ago';
-    } else if (day_diff < 31) {
-      rslt = Math.ceil(day_diff / 7) + ' weeks ago';
-    }
-    return rslt;
   }
 
   // Here we need to refresh the rings and titles after it has been initially rendered
@@ -770,14 +716,18 @@ export class RPiMonitorCard extends LitElement {
 
   private _startCardRefreshTimer(): void {
     this._updateTimerID = setInterval(() => this._handleCardUpdateTimerExpiration(), 1000);
-    console.log('TIMER: (' + this._hostname + ') started');
+    if (this._showDebug()) {
+      console.log('TIMER: (' + this._hostname + ') started');
+    }
   }
 
   private _stopCardRefreshTimer(): void {
     if (this._updateTimerID != undefined) {
       clearInterval(this._updateTimerID);
       this._updateTimerID = undefined;
-      console.log('TIMER: (' + this._hostname + ') STOPPED');
+      if (this._showDebug()) {
+        console.log('TIMER: (' + this._hostname + ') STOPPED');
+      }
     }
   }
 
@@ -895,6 +845,27 @@ export class RPiMonitorCard extends LitElement {
     return foundVersions;
   }
 
+  private _calculateDaemonUpdMessage(currentReporterVersion: string): string {
+    let updateStatusMessage: string = '';
+    if (this._showDebug()) {
+      console.log('- RNDR currentDaemonVersion=[' + currentReporterVersion + ']');
+      console.log('- RNDR latestDaemonVersions=[' + this.latestDaemonVersions + ']');
+    }
+    if (this.latestDaemonVersions.length > 0 && currentReporterVersion != '') {
+      if (this.currentDaemonVersion != this.latestDaemonVersions[0]) {
+        // reporter version is not latest
+        updateStatusMessage = currentReporterVersion + ' -- (' + this.latestDaemonVersions[0] + ' avail.)';
+      }
+    } else {
+      if (this.currentDaemonVersion != '') {
+        updateStatusMessage = currentReporterVersion + ' {no info avail.}';
+      } else {
+        updateStatusMessage = 'v?.?.? {no info avail.}';
+      }
+    }
+    return updateStatusMessage;
+  }
+
   private _getRelativeTimeSinceUpdate(): [string, number] {
     const stateObj = this._config.entity ? this.hass.states[this._config.entity] : undefined;
     let desiredValue: string = '';
@@ -904,7 +875,7 @@ export class RPiMonitorCard extends LitElement {
       try {
         const stateStrInterp = computeStateDisplay(this.hass?.localize, stateObj, this.hass.locale);
         // console.log('- grtsu card stateStrInterp=[' + stateStrInterp + ']');
-        const relativeInterp = stateStrInterp === undefined ? '{unknown}' : this.prettyDate(stateStrInterp);
+        const relativeInterp = stateStrInterp === undefined ? '{unknown}' : this._formatTimeAgo(stateStrInterp);
         // console.log('   relativeInterp=[' + relativeInterp + ']');
         desiredValue = this._sensorAvailable ? relativeInterp : '{unknown}';
         // console.log('   desiredValue=[' + desiredValue + ']');
@@ -922,6 +893,46 @@ export class RPiMonitorCard extends LitElement {
       }
     }
     return [desiredValue, desiredMinutes];
+  }
+
+  private _formatTimeAgo(time: string): string {
+    const date: Date = new Date((time || '').replace(/-/g, '/').replace(/[TZ]/g, ' '));
+    const diff: number = (new Date().getTime() - date.getTime()) / 1000;
+    const day_diff: number = Math.floor(diff / 86400);
+    const year: number = date.getFullYear();
+    const month: number = date.getMonth() + 1;
+    const day: number = date.getDate();
+
+    if (isNaN(day_diff) || day_diff < 0 || day_diff >= 31)
+      return (
+        year.toString() +
+        '-' +
+        (month < 10 ? '0' + month.toString() : month.toString()) +
+        '-' +
+        (day < 10 ? '0' + day.toString() : day.toString())
+      );
+
+    let rslt: string = '{unknown}';
+    if (day_diff == 0) {
+      if (diff < 60) {
+        rslt = 'just now';
+      } else if (diff < 120) {
+        rslt = '1 minute ago';
+      } else if (diff < 3600) {
+        rslt = Math.floor(diff / 60) + ' minutes ago';
+      } else if (diff < 7200) {
+        rslt = '1 hour ago';
+      } else if (diff < 86400) {
+        rslt = Math.floor(diff / 3600) + ' hours ago';
+      }
+    } else if (day_diff == 1) {
+      rslt = 'Yesterday';
+    } else if (day_diff < 7) {
+      rslt = day_diff + ' days ago';
+    } else if (day_diff < 31) {
+      rslt = Math.ceil(day_diff / 7) + ' weeks ago';
+    }
+    return rslt;
   }
 
   private _getIconNameForPercent(percent: string): string {
