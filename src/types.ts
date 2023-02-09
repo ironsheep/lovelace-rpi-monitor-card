@@ -13,6 +13,7 @@ declare global {
 | type          | string       | **Required**       | `custom:rpi-monitor-card`                                             |
 | entity        | string       | **Required**       | Entity State                                                          |
 | name          | string       | none               | Overrides default title of the card.                                  |
+| name_prefix   | string       | 'RPi monitor'      | Overrides default name prefix(Default: 'RPi Monitor')                 |
 | card_style    | string       | 'glance' or 'full' | Card layout desired for this RPi. (Default is Full)                   |
 | temp_scale    | string       | 'C' or 'F'         | Show Temperature in Celsius (C) or Fahrenheit (F). (Default is C)     |
 | fs_severity   | ColorRange[] | none               | A list of severity values. See [Severity Options](#severity-options). |
@@ -42,8 +43,8 @@ export interface RPiMonitorCardConfig extends LovelaceCardConfig {
   memory_severity?: ColorRange[];
   os_age?: OsColor[];
   name_prefix?: string;
-  show_title?: boolean;
   // following are on by default:  set to false to disable
+  show_title?: boolean;
   show_os_age?: boolean;
   show_update_age?: boolean;
   show_daemon_upd?: boolean;

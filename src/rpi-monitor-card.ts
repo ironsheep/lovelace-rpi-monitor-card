@@ -63,8 +63,7 @@ export class RPiMonitorCard extends LitElement {
   private _updateTimerID: NodeJS.Timeout | undefined;
   private _hostname: string = '';
   private kREPLACE_WITH_TEMP_UNITS: string = 'replace-with-temp-units';
-  private kMQTT_DAEMON_RELEASE_URL: string =
-    'https://raw.githubusercontent.com/ironsheep/RPi-Reporter-MQTT2HA-Daemon/master/Release';
+  private kMQTT_DAEMON_RELEASE_URL: string = 'https://raw.githubusercontent.com/ironsheep/RPi-Reporter-MQTT2HA-Daemon/master/Release';
   private latestDaemonVersions: string[] = ['v1.6.1', 'v1.6.0']; // REMOVE BEFORE FLIGHT (TEST DATA)
   private currentDaemonVersion: string = '';
 
@@ -365,18 +364,8 @@ export class RPiMonitorCard extends LitElement {
   }
 
   private async loadDaemonReleases(): Promise<void> {
-    this.latestDaemonVersions = await fetch(this.kMQTT_DAEMON_RELEASE_URL).then((response) =>
-      response.text().then(this._loadDaemonReleaseInfo),
-    );
-    console.log(
-      'LDR (' +
-        this._hostname +
-        ') latestDaemonVersions=[' +
-        this.latestDaemonVersions +
-        '](' +
-        this.latestDaemonVersions.length +
-        ')',
-    );
+    this.latestDaemonVersions = await fetch(this.kMQTT_DAEMON_RELEASE_URL).then((response) => response.text().then(this._loadDaemonReleaseInfo));
+    console.log('LDR (' + this._hostname + ') latestDaemonVersions=[' + this.latestDaemonVersions + '](' + this.latestDaemonVersions.length + ')');
   }
 
   /*
@@ -401,9 +390,8 @@ export class RPiMonitorCard extends LitElement {
     if (this.hass && this._config) {
       const oldHass = changedProps.get('hass') as HomeAssistant | undefined;
 
-      if (oldHass) {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        const bShouldStatus: boolean = oldHass.states[this._config.entity!] !== this.hass.states[this._config.entity!];
+      if (oldHass && this._config.entity) {
+        const bShouldStatus: boolean = oldHass.states[this._config.entity] !== this.hass.states[this._config.entity];
         //console.log('shouldUpdate(' + this._hostname + ') = [' + bShouldStatus + '] HASS');
         return bShouldStatus;
       }
@@ -476,9 +464,7 @@ export class RPiMonitorCard extends LitElement {
     const rpi_fqdn: string = this._getAttributeValueForKey(Constants.RPI_FQDN_KEY);
     const ux_release: string = showOsAge == true ? this._getAttributeValueForKey(Constants.RPI_NIX_RELEASE_KEY) : '';
 
-    const daemon_update_status: string = showDaemonUpdNeed
-      ? this._calculateDaemonUpdMessage(this.currentDaemonVersion)
-      : '';
+    const daemon_update_status: string = showDaemonUpdNeed ? this._calculateDaemonUpdMessage(this.currentDaemonVersion) : '';
     const card_timestamp = showCardAge == true ? this._cardUpdateString : '';
 
     let cardName: string = 'RPi monitor ' + rpi_fqdn;
@@ -521,7 +507,7 @@ export class RPiMonitorCard extends LitElement {
             ${fullRows}
             <div id="card-timestamp" class=${last_heard_full_class}>${card_timestamp}</div>
             <div id="os-name" class=${os_name_full_class}>${ux_release}</div>
-            <div id="daemon-update" class=${daemon_update_full_class}>${daemon_update_status}</div>
+            <div id="daemon-update" class="${daemon_update_full_class} center">${daemon_update_status}</div>
           </div>
         </ha-card>
       `;
@@ -548,7 +534,7 @@ export class RPiMonitorCard extends LitElement {
             ${glanceRows}
             <div id="card-timestamp" class=${last_heard_class}>${card_timestamp}</div>
             <div id="os-name" class=${os_name_class}>${ux_release}</div>
-            <div id="daemon-update" class=${daemon_update_class}>${daemon_update_status}</div>
+            <div id="daemon-update" class="${daemon_update_class} center">${daemon_update_status}</div>
           </div>
         </ha-card>
       `;
@@ -572,10 +558,11 @@ export class RPiMonitorCard extends LitElement {
       }
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const stateObj = this.hass!.states[this._config.entity!];
-    if (!stateObj) {
-      this._stopCardRefreshTimer();
+    if (this.hass && this._config.entity) {
+      const stateObj = this.hass.states[this._config.entity];
+      if (!stateObj) {
+        this._stopCardRefreshTimer();
+      }
     }
 
     //console.log('- changed Props: [' + changedProps + ']');
@@ -736,7 +723,6 @@ export class RPiMonitorCard extends LitElement {
     //  timestamp portion of card
     //
     //console.log('TIMER: (' + this._hostname + ') timeout');
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [card_timestamp_value, sinceInMinutes] = this._getRelativeTimeSinceUpdate();
     if (this._cardSecondsSinceUpdate != sinceInMinutes) {
       this._cardSecondsSinceUpdate = sinceInMinutes;
@@ -800,14 +786,15 @@ export class RPiMonitorCard extends LitElement {
         this._sensorAvailable = false;
         availChanged = true; // force output in this case
       } else {
-        try {
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          const tmpAvail = this.hass.states[this._config.entity!].state != 'unavailable';
-          availChanged = this._sensorAvailable != tmpAvail ? true : false;
-          this._sensorAvailable = tmpAvail;
-        } catch (error) {
-          this._sensorAvailable = false;
-          availChanged = true; // force output in this case
+        if (this._config.entity) {
+          try {
+            const tmpAvail = this.hass.states[this._config.entity].state != 'unavailable';
+            availChanged = this._sensorAvailable != tmpAvail ? true : false;
+            this._sensorAvailable = tmpAvail;
+          } catch (error) {
+            this._sensorAvailable = false;
+            availChanged = true; // force output in this case
+          }
         }
       }
     } else {
@@ -854,11 +841,11 @@ export class RPiMonitorCard extends LitElement {
     if (this.latestDaemonVersions.length > 0 && currentReporterVersion != '') {
       if (this.currentDaemonVersion != this.latestDaemonVersions[0]) {
         // reporter version is not latest
-        updateStatusMessage = currentReporterVersion + ' -- (' + this.latestDaemonVersions[0] + ' avail.)';
+        updateStatusMessage = 'Upd: ' + this.latestDaemonVersions[0];
       }
     } else {
       if (this.currentDaemonVersion != '') {
-        updateStatusMessage = currentReporterVersion + ' {no info avail.}';
+        updateStatusMessage = '{no info avail.}';
       } else {
         updateStatusMessage = 'v?.?.? {no info avail.}';
       }
@@ -904,33 +891,27 @@ export class RPiMonitorCard extends LitElement {
     const day: number = date.getDate();
 
     if (isNaN(day_diff) || day_diff < 0 || day_diff >= 31)
-      return (
-        year.toString() +
-        '-' +
-        (month < 10 ? '0' + month.toString() : month.toString()) +
-        '-' +
-        (day < 10 ? '0' + day.toString() : day.toString())
-      );
+      return year.toString() + '-' + (month < 10 ? '0' + month.toString() : month.toString()) + '-' + (day < 10 ? '0' + day.toString() : day.toString());
 
     let rslt: string = '{unknown}';
     if (day_diff == 0) {
       if (diff < 60) {
         rslt = 'just now';
       } else if (diff < 120) {
-        rslt = '1 minute ago';
+        rslt = '1 min ago';
       } else if (diff < 3600) {
-        rslt = Math.floor(diff / 60) + ' minutes ago';
+        rslt = Math.floor(diff / 60) + ' mins ago';
       } else if (diff < 7200) {
-        rslt = '1 hour ago';
+        rslt = '1 hr ago';
       } else if (diff < 86400) {
-        rslt = Math.floor(diff / 3600) + ' hours ago';
+        rslt = Math.floor(diff / 3600) + ' hrs ago';
       }
     } else if (day_diff == 1) {
       rslt = 'Yesterday';
     } else if (day_diff < 7) {
       rslt = day_diff + ' days ago';
     } else if (day_diff < 31) {
-      rslt = Math.ceil(day_diff / 7) + ' weeks ago';
+      rslt = Math.ceil(day_diff / 7) + ' wks ago';
     }
     return rslt;
   }
@@ -982,15 +963,7 @@ export class RPiMonitorCard extends LitElement {
           color = section.color;
           if (this._showDebug()) {
             const logMessage =
-              '_computeTemperatureColor() - value=[' +
-              value +
-              '] matched(from=' +
-              section.from +
-              ', to=' +
-              section.to +
-              ', color=' +
-              color +
-              ')';
+              '_computeTemperatureColor() - value=[' + value + '] matched(from=' + section.from + ', to=' + section.to + ', color=' + color + ')';
             console.log(logMessage);
           }
         }
@@ -1020,15 +993,7 @@ export class RPiMonitorCard extends LitElement {
           color = section.color;
           if (this._showDebug()) {
             const logMessage =
-              '_computeFileSystemUsageColor() - value=[' +
-              value +
-              '] matched(from=' +
-              section.from +
-              ', to=' +
-              section.to +
-              ', color=' +
-              color +
-              ')';
+              '_computeFileSystemUsageColor() - value=[' + value + '] matched(from=' + section.from + ', to=' + section.to + ', color=' + color + ')';
             console.log(logMessage);
           }
         }
@@ -1056,15 +1021,7 @@ export class RPiMonitorCard extends LitElement {
           color = section.color;
           if (this._showDebug()) {
             const logMessage =
-              '_computeMemoryUsageColor() - value=[' +
-              value +
-              '] matched(from=' +
-              section.from +
-              ', to=' +
-              section.to +
-              ', color=' +
-              color +
-              ')';
+              '_computeMemoryUsageColor() - value=[' + value + '] matched(from=' + section.from + ', to=' + section.to + ', color=' + color + ')';
             console.log(logMessage);
           }
         }
@@ -1092,8 +1049,7 @@ export class RPiMonitorCard extends LitElement {
       if (osName === section.os) {
         color = section.color;
         if (this._showDebug()) {
-          const logMessage =
-            '_computeOsReleaseColor() - value=[' + osName + '] matched(os=' + section.os + ', color=' + color + ')';
+          const logMessage = '_computeOsReleaseColor() - value=[' + osName + '] matched(os=' + section.os + ', color=' + color + ')';
           console.log(logMessage);
         }
       }
@@ -1128,8 +1084,7 @@ export class RPiMonitorCard extends LitElement {
       color = 'orange';
     }
     if (this._showDebug()) {
-      const logMessage =
-        '_computeDaemonUpdateVersionColor() - value=[' + currentReporterVersion + '] returns(color=' + color + ')';
+      const logMessage = '_computeDaemonUpdateVersionColor() - value=[' + currentReporterVersion + '] returns(color=' + color + ')';
       console.log(logMessage);
     }
 
@@ -1484,6 +1439,9 @@ export class RPiMonitorCard extends LitElement {
         justify-content: space-between;
         padding: 16px 32px 24px 32px;
       }
+      .content {
+        text-align: center;
+      }
       .attributes {
         cursor: pointer;
       }
@@ -1503,84 +1461,84 @@ export class RPiMonitorCard extends LitElement {
       .last-heard-full {
         position: absolute;
         top: 45px;
-        right: 30px;
+        right: 5%;
         font-size: 12px;
         color: var(--primary-text-color);
       }
       .last-heard {
         position: absolute;
         top: 55px;
-        right: 30px;
+        right: 5%;
         font-size: 12px;
         color: var(--primary-text-color);
       }
       .last-heard-full-notitle {
         position: absolute;
         top: 3px;
-        right: 30px;
+        right: 5%;
         font-size: 12px;
         color: var(--primary-text-color);
       }
       .last-heard-notitle {
         position: absolute;
         bottom: 5px;
-        right: 90px;
+        right: 15%;
         font-size: 12px;
         color: var(--primary-text-color);
       }
       .os-name-full {
         position: absolute;
         top: 45px;
-        left: 30px;
+        left: 5%;
         font-size: 12px;
         color: var(--primary-text-color);
       }
       .os-name {
         position: absolute;
         top: 55px;
-        left: 30px;
+        left: 5%;
         font-size: 12px;
         color: var(--primary-text-color);
       }
       .os-name-full-notitle {
         position: absolute;
         top: 3px;
-        left: 30px;
+        left: 5%;
         font-size: 12px;
         color: var(--primary-text-color);
       }
       .os-name-notitle {
         position: absolute;
         bottom: 5px;
-        left: 90px;
+        left: 15%;
         font-size: 12px;
         color: var(--primary-text-color);
       }
       .daemon-update-full {
         position: absolute;
         top: 45px;
-        right: 150px;
+        right: 25%;
         font-size: 12px;
         color: var(--primary-text-color);
       }
       .daemon-update {
         position: absolute;
         top: 55px;
-        right: 150px;
+        right: 25%;
         font-size: 12px;
         color: var(--primary-text-color);
       }
       .daemon-update-full-notitle {
         position: absolute;
         top: 3px;
-        right: 150px;
+        right: 25%;
         font-size: 12px;
         color: var(--primary-text-color);
       }
       .daemon-update-notitle {
         position: absolute;
         bottom: 5px;
-        right: 210px;
+        right: 35%;
         font-size: 12px;
         color: var(--primary-text-color);
       }

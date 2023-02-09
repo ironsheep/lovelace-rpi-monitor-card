@@ -34,22 +34,22 @@ If you don't use HACS please change the url accordingly.
 
 ## Configuration
 
-| Name          | Type    | Default            | Description                                                             |
-| ------------- | ------- | ------------------ | ----------------------------------------------------------------------- |
-| type          | string  | **Required**       | `custom:rpi-monitor-card`                                               |
-| entity        | string  | **Required**       | Entity State                                                            |
-| name          | string  | none               | Overrides default title of the card. (Default: RPi Monitor {FQDN})      |
-| name_prefix   | string  | 'RPi monitor'      | Overrides default name prefix(Default: 'RPi Monitor')                   |
-| card_style    | string  | 'glance' or 'full' | Card layout desired for this RPi. (Default is full)                     |
-| temp_scale    | string  | 'C' or 'F'         | Show Temperature in Celsius (C) or Fahrenheit (F). (Default is C)       |
-| fs_severity   | object  | none               | A list of severity values. See [Severity Coloring](#severity-coloring). |
-| temp_severity | object  | none               | A list of severity values. See [Severity Coloring](#severity-coloring). |
-| memory_severity | object| none               | A list of severity values. See [Severity Coloring](#severity-coloring). |
-| os_age        | object  | none               | A list of os name and color values. See [OS Coloring](#os-coloring).    |
-| show_title    | boolean | true               | Show / hide the Title for this card. (Default is show - 'true')         |
-| show\_os_age    | boolean | true             | Show / hide the os release name (Default is show - 'true')              |
-| show\_update_age | boolean | true            | Show / hide time since last values reported for this card. (Default is show - 'true')|
-| show\_daemon_upd | boolean | true            | Show / hide Daemon update needed flag. (Default is show - 'true')       |
+| Name            | Type    | Default            | Description                                                                           |
+| --------------- | ------- | ------------------ | ------------------------------------------------------------------------------------- |
+| type            | string  | **Required**       | `custom:rpi-monitor-card`                                                             |
+| entity          | string  | **Required**       | Entity State                                                                          |
+| name            | string  | none               | Overrides default title of the card. (Default: RPi Monitor {FQDN})                    |
+| name_prefix     | string  | 'RPi monitor'      | Overrides default name prefix(Default: 'RPi Monitor')                                 |
+| card_style      | string  | 'glance' or 'full' | Card layout desired for this RPi. (Default is full)                                   |
+| temp_scale      | string  | 'C' or 'F'         | Show Temperature in Celsius (C) or Fahrenheit (F). (Default is C)                     |
+| fs_severity     | object  | none               | A list of severity values. See [Severity Coloring](#severity-coloring).               |
+| temp_severity   | object  | none               | A list of severity values. See [Severity Coloring](#severity-coloring).               |
+| memory_severity | object  | none               | A list of severity values. See [Severity Coloring](#severity-coloring).               |
+| os_age          | object  | none               | A list of os name and color values. See [OS Coloring](#os-coloring).                  |
+| show_title      | boolean | true               | Show / hide the Title for this card. (Default is show - 'true')                       |
+| show_os_age     | boolean | true               | Show / hide the os release name (Default is show - 'true')                            |
+| show_update_age | boolean | true               | Show / hide time since last values reported for this card. (Default is show - 'true') |
+| show_daemon_upd | boolean | true               | Show / hide Daemon update needed flag. (Default is show - 'true')                     |
 
 ### Threashold Monitoring
 
@@ -76,14 +76,14 @@ The OS release name is also colored by expiration of support. The following defa
 
 The default release coloring is
 
-| **Value**/color    | Release | Exp. Date  |
-| ------------------ | ---- | --- |
-| **OS Release**     |    
-| red                | wheezy  |  31 May 2018 |
-| red                | jessie  | 30 June 2020 |
-| red                | stretch | 30 June 2022 |
+| **Value**/color | Release | Exp. Date    |
+| --------------- | ------- | ------------ |
+| **OS Release**  |
+| red             | wheezy  | 31 May 2018  |
+| red             | jessie  | 30 June 2020 |
+| red             | stretch | 30 June 2022 |
 
-**NOTE:** The release colors are based on when the named released reaches [end of support](https://en.wikipedia.org/wiki/Debian_version_history)  When a release reaches end of support we no longer get security updates. It is best to simply move to the current release (or last release supporting your RPi version) when this happens.  These color flags on the OS release let us know when we should be thinking about building a new OS image for the affected RPi.
+**NOTE:** The release colors are based on when the named released reaches [end of support](https://en.wikipedia.org/wiki/Debian_version_history) When a release reaches end of support we no longer get security updates. It is best to simply move to the current release (or last release supporting your RPi version) when this happens. These color flags on the OS release let us know when we should be thinking about building a new OS image for the affected RPi.
 
 ### RPi Daemon update available coloring
 
@@ -97,14 +97,14 @@ Use the following format to override either/or both of 'space used' and 'system 
 | ----- | ------ | ------------ | ------------------------------------------------------- |
 | from  | number | **Required** | Defines from which value the color should be displayed. |
 | to    | number | **Required** | Defines to which value the color should be displayed.   |
-| color | string  | **Required** | Defines the color to be displayed.                      |
+| color | string | **Required** | Defines the color to be displayed.                      |
 
 ### OS Coloring
 
-| Name  | Type   | Default      | Description                                             |
-| ----- | ------ | ------------ | ------------------------------------------------------- |
-| os    | string | **Required** | Defines for which named release this color is displayed (e.g., 'buster', 'stretch')  |
-| color | string | **Required** | Defines the color to be displayed.                      |
+| Name  | Type   | Default      | Description                                                                         |
+| ----- | ------ | ------------ | ----------------------------------------------------------------------------------- |
+| os    | string | **Required** | Defines for which named release this color is displayed (e.g., 'buster', 'stretch') |
+| color | string | **Required** | Defines the color to be displayed.                                                  |
 
 ### Example card specifications
 
