@@ -48,6 +48,7 @@ export const CARD_VERSION = '1.3.1';
     "temp_gpu_c": 40.1,
     "temp_cpu_c": 40.1,
     "reporter": "ISP-RPi-mqtt-daemon v1.5.4",
+    "reporter_releases": "v1.7.2,v1.6.2",
     "report_interval": 5
   }
 }*/
@@ -68,6 +69,7 @@ export const RPI_FS_USED_PERCENT_KEY = 'fs_free_prcnt';
 export const RPI_NETWORKING_KEY = 'networking';
 export const RPI_TEMPERATURE_IN_C_KEY = 'temperature_c';
 export const RPI_SCRIPT_VER_KEY = 'reporter';
+export const RPI_SCRIPT_RELEASE_LIST = 'reporter_releases';
 export const RPI_SCRIPT_INTERVAL_KEY = 'report_interval';
 
 export const SHOW_OS_PARTS_VALUE = 'show-os-parts';
