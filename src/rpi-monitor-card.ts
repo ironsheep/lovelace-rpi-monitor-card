@@ -257,14 +257,14 @@ export class RPiMonitorCard extends LitElement {
     //console.log('/---- shouldUpdate(' + this._hostname + ') - ENTRY');
 
     // list our keys
-    this._debugShowProps(changedProps, 'shouldUpdate');
+    // XYZZY this._debugShowProps(changedProps, 'shouldUpdate');
 
     // Opeartional note:
     // all the properties will come thru as undefined when page is first loaded
     //   in this case we say update since the card need to be initially painted
 
     if (!this._config) {
-      console.log(' - SU ABORT, no config');
+      // XYZZY console.log(' - SU ABORT, no config');
       return false;
     }
 
@@ -272,21 +272,23 @@ export class RPiMonitorCard extends LitElement {
     let bShouldStatus: boolean = false;
     if (changedProps.has('_config')) {
       // this will catch our changedProps['_config'] == undefined case in which case we will initially paint our cards
-      console.log(' - SU config present');
+      // XYZZY console.log(' - SU config present');
       bShouldStatus = true;
     } else if (changedProps.has('_cardMinutesSinceUpdate')) {
-      console.log(' - SU card last updated changed');
+      // XYZZY console.log(' - SU card last updated changed');
       bShouldStatus = true;
     } else if (this.hass && this._config && changedProps.has('hass')) {
       const oldHass = changedProps.get('hass') as HomeAssistant;
 
       if (oldHass && this._configEntityId) {
         bShouldStatus = oldHass.states[this._configEntityId] !== this.hass.states[this._configEntityId];
+        /* XYZZY
         if (bShouldStatus) {
           console.log(' - SU hass state changed');
         } else {
           console.log(' - SU !! NO hass state change');
         }
+        */
       }
     }
     /*
@@ -297,7 +299,7 @@ export class RPiMonitorCard extends LitElement {
     }
     */
 
-    console.log('\\---- shouldUpdate(' + this._hostname + ') - EXIT w/' + bShouldStatus);
+    // XYZZY console.log('\\---- shouldUpdate(' + this._hostname + ') - EXIT w/' + bShouldStatus);
     return bShouldStatus;
   }
 
@@ -305,8 +307,10 @@ export class RPiMonitorCard extends LitElement {
     // Called before update() (which in-turn calls render()) to compute values needed during the update.
     // https://lit.dev/docs/components/lifecycle/#willupdate
     //console.log('/---- willUpdate(' + this._hostname + ') - ENTRY');
+    if (changedProps) {
+    } // kill compiler warn
     // list our keys
-    this._debugShowProps(changedProps, 'willUpdate()');
+    // XYZZY this._debugShowProps(changedProps, 'willUpdate()');
     //console.log('\\---- willUpdate(' + this._hostname + ') - EXIT');
   }
 
@@ -352,7 +356,7 @@ export class RPiMonitorCard extends LitElement {
       }
 
       // set timer so our card updates timestamp every 5 seconds : 5000 (1 second: 1000)
-      // FIXME: UNDONE remember to clear this interval when entity NOT avail. and restore when comes avail again...
+      // remember to clear this interval when entity NOT avail. and restore when comes avail again...
       this._startCardRefreshTimer();
 
       if (this._showDebug) {
@@ -465,8 +469,8 @@ export class RPiMonitorCard extends LitElement {
         </ha-card>
       `;
     }
-    console.log('/ ---- render() ' + this._hostname + ' ---- :');
-    console.log(cardHtml);
+    // XYZZY console.log('/ ---- render() ' + this._hostname + ' ---- :');
+    // XYZZY console.log(cardHtml);
     //console.log('\\---- render(' + this._hostname + ') - EXIT');
     return cardHtml;
   }
@@ -483,7 +487,7 @@ export class RPiMonitorCard extends LitElement {
     }
 
     // list our keys
-    this._debugShowProps(changedProps, 'Updated()');
+    // XYZZY this._debugShowProps(changedProps, 'Updated()');
 
     if (this._config) {
       // update cards' theme if changed
