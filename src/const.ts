@@ -1,57 +1,87 @@
-export const CARD_VERSION = '1.3.1';
+export const CARD_VERSION = '1.3.2';
 
 /*
-*  EXAMPLE attributes  ISP-RPi-mqtt-daemon.py v1.5.4
+*  EXAMPLE attributes  ISP-RPi-mqtt-daemon.py v1.7.2
 {
   "info": {
-    "timestamp": "2021-05-18T18:17:52-06:00",
-    "rpi_model": "RPi 2 Model B r1.1",
-    "ifaces": "e",
-    "host_name": "pinode1",
-    "fqdn": "pinode1.home",
-    "ux_release": "jessie",
-    "ux_version": "4.9.35-v7+",
-    "up_time": " 4:55",
-    "last_update": "2021-05-18T14:39:58-06:00",
+    "timestamp": "2023-02-11T22:36:15-07:00",
+    "rpi_model": "RPi 4 Model B r1.5",
+    "ifaces": "e,w,b",
+    "host_name": "pip2iotgw",
+    "fqdn": "pip2iotgw.home",
+    "ux_release": "bullseye",
+    "ux_version": "5.15.84-v8+",
+    "up_time": " 9:41",
+    "last_update": "2023-02-11T01:18:02-07:00",
     "fs_total_gb": 32,
-    "fs_free_prcnt": 19,
+    "fs_free_prcnt": 18,
     "networking": {
       "eth0": {
-        "mac": "b8:27:eb:b0:9c:3b",
-        "IP": "192.168.100.42"
+        "mac": "e4:5f:01:f8:18:01"
+      },
+      "wlan0": {
+        "IP": "192.168.100.196",
+        "mac": "e4:5f:01:f8:18:02"
       }
     },
     "drives": {
       "root": {
         "size_gb": 32,
-        "used_prcnt": 19,
+        "used_prcnt": 18,
         "device": "/dev/root",
         "mount_pt": "/"
       }
     },
     "memory": {
-      "size_mb": "923.355",
-      "free_mb": "795.066"
+      "size_mb": "1849.246",
+      "free_mb": "1508.148"
     },
     "cpu": {
       "hardware": "BCM2835",
-      "model": "ARMv7 Processor rev 5 (v7l)",
+      "model": "",
       "number_cores": 4,
-      "bogo_mips": "230.40",
-      "serial": "00000000bab09c3b"
+      "bogo_mips": "432.00",
+      "serial": "1000000081ae88c7",
+      "load_1min_prcnt": 0.2,
+      "load_5min_prcnt": 0.5,
+      "load_15min_prcnt": 0
     },
     "throttle": [
       "throttled = 0x0",
       "Not throttled"
     ],
-    "temperature_c": 40.1,
-    "temp_gpu_c": 40.1,
-    "temp_cpu_c": 40.1,
-    "reporter": "ISP-RPi-mqtt-daemon v1.5.4",
+    "temperature_c": 27.2,
+    "temp_gpu_c": 27.2,
+    "temp_cpu_c": 26.3,
+    "reporter": "ISP-RPi-mqtt-daemon v1.7.2",
     "reporter_releases": "v1.7.2,v1.6.2",
     "report_interval": 5
   }
-}*/
+}
+*/
+
+// attribute ICON IDs
+export const kClassIconFSAvail = 'ico-fs-percent';
+export const kClassIconFSTotal = 'ico-fs-total';
+export const kClassIconSysTemp = 'ico-sys-temp';
+export const kClassIconUptime = 'ico-up-time';
+export const kClassIconUpdated = 'ico-last-update';
+export const kClassIconOS = 'ico-*nix';
+export const kClassIconRPiModel = 'ico-rpi-model';
+export const kClassIconInterfaces = 'ico-rpi-ifaces';
+export const kClassIconMemoryUsage = 'ico-memory-percent';
+// attribute value label IDs
+export const kClassIdFSAvail = 'fs-percent';
+export const kClassIdFSTotal = 'fs-total';
+export const kClassIdSysTemp = 'sys-temp';
+export const kClassIdUptime = 'up-time';
+export const kClassIdUpdated = 'last-update';
+export const kClassIdOS = '*nix';
+export const kClassIdRPiModel = 'rpi-model';
+export const kClassIdInterfaces = 'rpi-ifaces';
+export const kClassIdMemoryUsage = 'memory-percent';
+// ond one special for unit
+export const kClassIdTempScale = 'sys-temp-scale';
 
 export const RPI_TOP_KEY = 'info';
 

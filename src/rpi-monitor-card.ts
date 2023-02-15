@@ -1,10 +1,10 @@
-/* eslint-disable @typescript-eslint/no-inferrable-types */ /* I prefer to learn early when an unexpected type is being assigned */
+/* eslint-disable @typescript-eslint/no-inferrable-types */
+// (I prefer to learn early when an unexpected type is being assigned)
 import { LitElement, html, TemplateResult, css, PropertyValues, CSSResultGroup } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import {
   HomeAssistant,
   applyThemesOnElement,
-  computeStateDisplay,
   hasAction,
   ActionHandlerEvent,
   handleAction,
@@ -18,6 +18,7 @@ import './editor';
 import { RPiMonitorCardConfig } from './types';
 import { actionHandler } from './action-handler-directive';
 import * as Constants from './const';
+import { ColorUtils } from './coloring';
 
 import { localize } from './localize/localize';
 
@@ -55,26 +56,33 @@ export class RPiMonitorCard extends LitElement {
   @property({ attribute: false }) public hass!: HomeAssistant;
 
   @state() private _config!: RPiMonitorCardConfig;
-  @state() private _cardSecondsSinceUpdate: number = 0;
-  @state() private _cardUpdateString: string = '';
+
+  @state() private _cardMinutesSinceUpdate: number = 0;
 
   // and those that don't cause a re-render
   private _firstTime: boolean = true;
-  private _sensorAvailable: boolean = false;
+  private _stateInfoAvailable: boolean = false;
   private _updateTimerID: NodeJS.Timeout | undefined = undefined;
   private _configEntityId: string | undefined = undefined;
   private _hostname: string = '';
   private _showFullCard: boolean = true;
   private _useTempsInC: boolean = true;
   private kREPLACE_WITH_TEMP_UNITS: string = 'replace-with-temp-units';
-  private kMQTT_DAEMON_RELEASE_URL: string = 'https://raw.githubusercontent.com/ironsheep/RPi-Reporter-MQTT2HA-Daemon/master/Release';
   private latestDaemonVersions: string[] = ['v1.7.2', 'v1.6.1']; // REMOVE BEFORE FLIGHT (TEST DATA)
   private currentDaemonVersion: string = '';
 
+  // OS Age is shown (default = True) unless turned off
+  private _showOsAge: boolean = true;
+  // Card Update Age is shown (default = True) unless turned off
+  private _showCardAge: boolean = true;
+  private _showDaemonUpdNeed: boolean = true;
+  private _showCardName: boolean = true;
+
   // WARNING set following to false before commit!
   private _showDebug: boolean = false; // REMOVE BEFORE FLIGHT (!set to false before check-in!)
+  private colorHelpers: ColorUtils = new ColorUtils();
 
-  //
+  // -----------------------------------------------------------
   // FULL-SIZE CARD tables
   //
   private _cardFullElements = {
@@ -92,8 +100,8 @@ export class RPiMonitorCard extends LitElement {
 
   private _cardFullIconNames = {
     // top to bottom
-    Storage: 'sd',
     'Storage Use': 'file-percent',
+    Storage: 'sd',
     'Memory Use': 'memory',
     Temperature: 'thermometer',
     'Up-time': 'clock-check-outline',
@@ -103,54 +111,32 @@ export class RPiMonitorCard extends LitElement {
     Interfaces: '',
   };
 
-  // attribute ICON IDs
-  private kClassIdIconFSAvail = 'ico-fs-percent';
-  private kClassIdIconFSTotal = 'ico-fs-total';
-  private kClassIdIconSysTemp = 'ico-sys-temp';
-  private kClassIdIconUptime = 'ico-up-time';
-  private kClassIdIconUpdated = 'ico-last-update';
-  private kClassIdIconOS = 'ico-*nix';
-  private kClassIdIconRPiModel = 'ico-rpi-model';
-  private kClassIdIconInterfaces = 'ico-rpi-ifaces';
-  private kClassIdIconMemoryUsage = 'ico-memory-percent';
-  // attribute value label IDs
-  private kClassIdFSAvail = 'fs-percent';
-  private kClassIdFSTotal = 'fs-total';
-  private kClassIdSysTemp = 'sys-temp';
-  private kClassIdUptime = 'up-time';
-  private kClassIdUpdated = 'last-update';
-  private kClassIdOS = '*nix';
-  private kClassIdRPiModel = 'rpi-model';
-  private kClassIdInterfaces = 'rpi-ifaces';
-  private kClassIdMemoryUsage = 'memory-percent';
-  // ond one special for unit
-  private kClassIdTempScale = 'sys-temp-scale';
-
   private _cardFullCssIDs = {
     // top to bottom
-    'Storage Use': this.kClassIdFSAvail,
-    Storage: this.kClassIdFSTotal,
-    'Memory Use': this.kClassIdMemoryUsage,
-    Temperature: this.kClassIdSysTemp,
-    'Up-time': this.kClassIdUptime,
-    Updated: this.kClassIdUpdated,
-    OS: this.kClassIdOS,
-    Model: this.kClassIdRPiModel,
-    Interfaces: this.kClassIdInterfaces,
+    'Storage Use': Constants.kClassIdFSAvail,
+    Storage: Constants.kClassIdFSTotal,
+    'Memory Use': Constants.kClassIdMemoryUsage,
+    Temperature: Constants.kClassIdSysTemp,
+    'Up-time': Constants.kClassIdUptime,
+    Updated: Constants.kClassIdUpdated,
+    OS: Constants.kClassIdOS,
+    Model: Constants.kClassIdRPiModel,
+    Interfaces: Constants.kClassIdInterfaces,
   };
   private _cardFullIconCssIDs = {
     // top to bottom
-    'Storage Use': this.kClassIdIconFSAvail,
-    Storage: this.kClassIdIconFSTotal,
-    'Memory Use': this.kClassIdIconMemoryUsage,
-    'Up-time': this.kClassIdIconUptime,
-    Updated: this.kClassIdIconUpdated,
-    Temperature: this.kClassIdIconSysTemp,
-    OS: this.kClassIdIconOS,
-    Model: this.kClassIdIconRPiModel,
-    Interfaces: this.kClassIdIconInterfaces,
+    'Storage Use': Constants.kClassIconFSAvail,
+    Storage: Constants.kClassIconFSTotal,
+    'Memory Use': Constants.kClassIconMemoryUsage,
+    Temperature: Constants.kClassIconSysTemp,
+    'Up-time': Constants.kClassIconUptime,
+    Updated: Constants.kClassIconUpdated,
+    OS: Constants.kClassIconOS,
+    Model: Constants.kClassIconRPiModel,
+    Interfaces: Constants.kClassIconInterfaces,
   };
-  //
+
+  // -----------------------------------------------------------
   // GLANCE CARD tables
   //
   private _cardGlanceElements = {
@@ -174,154 +160,26 @@ export class RPiMonitorCard extends LitElement {
 
   private _cardGlanceCssIDs = {
     // left to right
-    '%': this.kClassIdFSAvail,
-    GB: this.kClassIdFSTotal,
-    Mem: this.kClassIdMemoryUsage,
-    'replace-with-temp-units': this.kClassIdSysTemp,
-    UpTime: this.kClassIdUptime,
-    Upd: this.kClassIdUpdated,
+    '%': Constants.kClassIdFSAvail,
+    GB: Constants.kClassIdFSTotal,
+    Mem: Constants.kClassIdMemoryUsage,
+    'replace-with-temp-units': Constants.kClassIdSysTemp,
+    UpTime: Constants.kClassIdUptime,
+    Upd: Constants.kClassIdUpdated,
   };
 
   private _cardGlanceIconCssIDs = {
     // left to right
-    '%': this.kClassIdIconFSAvail,
-    GB: this.kClassIdIconFSTotal,
-    Mem: this.kClassIdIconMemoryUsage,
-    'replace-with-temp-units': this.kClassIdIconSysTemp,
-    UpTime: this.kClassIdIconUptime,
-    Upd: this.kClassIdIconUpdated,
+    '%': Constants.kClassIconFSAvail,
+    GB: Constants.kClassIconFSTotal,
+    Mem: Constants.kClassIconMemoryUsage,
+    'replace-with-temp-units': Constants.kClassIconSysTemp,
+    UpTime: Constants.kClassIconUptime,
+    Upd: Constants.kClassIconUpdated,
   };
-
-  // space used icon set
-  private _circleIconsValueByName = {
-    'circle-outline': 0,
-    'circle-slice-1': 13,
-    'circle-slice-2': 25,
-    'circle-slice-3': 38,
-    'circle-slice-4': 50,
-    'circle-slice-5': 63,
-    'circle-slice-6': 75,
-    'circle-slice-7': 88,
-    'circle-slice-8': 100,
-  };
-
-  /*
-   *  COLORING Goals (default)
-   *
-   *  1) color  time since reported:  yellow if longer than 1 reporting interval, red if two or more
-   *  2) color space-used: nothing to 60%, 61-85% yellow, 86%+ red
-   *  3) color temp: nothing to 59C, 60-79C yellow, 80C+ red
-   */
-
-  // DEFAULT coloring for used space
-  //  user sets 'fs_severity' to override
-  private _colorUsedSpaceDefault = [
-    {
-      color: 'default',
-      from: 0,
-      to: 59,
-    },
-    {
-      color: 'yellow',
-      from: 60,
-      to: 84,
-    },
-    {
-      color: 'red',
-      from: 85,
-      to: 100,
-    },
-  ];
-
-  // coloring for temp-in-C
-  //  user sets 'temp_severity' to override
-  private _colorTemperatureDefault = [
-    {
-      color: 'default',
-      from: 0,
-      to: 59,
-    },
-    {
-      color: 'yellow',
-      from: 60,
-      to: 79,
-    },
-    {
-      color: 'red',
-      from: 85,
-      to: 100,
-    },
-  ];
-
-  // coloring for report update age
-  // no user override for now
-  private _colorReportPeriodsAgoDefault = [
-    {
-      color: 'default',
-      from: 0,
-      to: 3,
-    },
-    {
-      color: 'orange',
-      from: 4,
-      to: 5,
-    },
-    {
-      color: 'red',
-      from: 6,
-      to: 100,
-    },
-  ];
-
-  // DEFAULT coloring for used memory
-  //  user sets 'memory_severity' to override
-  private _colorUsedMemoryDefault = [
-    {
-      color: 'red',
-      from: 75,
-      to: 100,
-    },
-    {
-      color: 'yellow',
-      from: 61,
-      to: 74,
-    },
-    {
-      color: 'default',
-      from: 0,
-      to: 60,
-    },
-  ];
-
-  // DEFAULT coloring for named releases
-  // intent is to show which ones are aging and should no longer be used
-  //  user sets 'os_age' to override
-  // see https://en.wikipedia.org/wiki/Debian_version_history for important dates (e.g., 'Long-term')
-  // Jessie EOL 30 June 2020 'red'
-  // Stretch EOL 30 June 2022 'red'
-  // Buster EOL 30 June 2024: Jun 2023 'orange', Jan 2024 is 'yellow'
-  //
-  // TODO: replace color with dates and use days until date to color?
-  //
-  // Thinking:  past EOL is 'red'
-  //            within 6 mos of EOL is yellow
-  //            within 12 mos of EOL is orange
-  private _colorReleaseDefault = [
-    {
-      color: 'red',
-      os: 'stretch',
-    },
-    {
-      color: 'red',
-      os: 'jessie',
-    },
-    {
-      color: 'red',
-      os: 'wheezy',
-    },
-  ];
 
   public setConfig(config: RPiMonitorCardConfig): void {
+    // https://lit.dev/docs/components/properties/#accessors-custom
     //console.log('- setConfig() - ENTRY');
 
     // use user debug flag or override with internal flag if set
@@ -335,6 +193,11 @@ export class RPiMonitorCard extends LitElement {
     // Optional: Check for required fields and that they are of the proper format
     if (!config || config.show_error) {
       throw new Error(localize('common.invalid_configuration'));
+    }
+
+    if (!config.entity) {
+      console.log("Invalid configuration. If no entity provided, you'll need to provide a remote entity");
+      throw new Error('You need to associate an entity');
     }
 
     if (config.card_style != undefined) {
@@ -355,14 +218,15 @@ export class RPiMonitorCard extends LitElement {
       this._useTempsInC = config.temp_scale.toLocaleLowerCase() === 'c' ? true : false;
     }
 
-    if (!config.entity) {
-      console.log("Invalid configuration. If no entity provided, you'll need to provide a remote entity");
-      throw new Error('You need to associate an entity');
-    }
-
     if (config.test_gui) {
       getLovelace().setEditMode(true);
     }
+    // OS Age is shown (default = True) unless turned off
+    this._showOsAge = config.show_os_age ? config.show_os_age : true;
+    // Card Update Age is shown (default = True) unless turned off
+    this._showCardAge = config.show_update_age ? config.show_update_age : true;
+    this._showDaemonUpdNeed = config.show_daemon_upd ? config.show_daemon_upd : true;
+    this._showCardName = config.show_title ? config.show_title : true;
 
     this._config = {
       //name: 'RPi Monitor', (causes name overwrite, don't do this!!!)
@@ -373,48 +237,83 @@ export class RPiMonitorCard extends LitElement {
 
     this._configEntityId = this._config.entity != undefined ? this._config.entity : undefined;
 
-    this._updateSensorAvailability();
-
+    // set initial state avail.
+    this._ensureStateInfoAvail();
     // request the release info from the DAEMON repository
     //this.loadDaemonReleases();
     //console.log('- setConfig() - EXIT');
   }
 
   protected shouldUpdate(changedProps: PropertyValues): boolean {
+    // Called to determine whether an update cycle is required.
     // https://lit.dev/docs/components/lifecycle/#reactive-update-cycle-performing
-    //return hasConfigOrEntityChanged(this, changedProps, false);
-    if (this._hostname.length == 0 || this._hostname == this._configEntityId) {
-      const tempHostname: string = this._getAttributeValueForKey(Constants.RPI_HOST_NAME_KEY);
-      if (tempHostname && tempHostname.length > 0) {
-        this._hostname = tempHostname;
-      } else {
-        this._hostname = this._configEntityId ? this._configEntityId : '-not-set-';
-      }
+    // if we don't yet know our hostname, then get it
+
+    this._ensureStateInfoAvail();
+
+    // and for debug earliest use:
+    this._ensureWeHaveHostName();
+
+    //console.log('/---- shouldUpdate(' + this._hostname + ') - ENTRY');
+
+    // list our keys
+    this._debugShowProps(changedProps, 'shouldUpdate');
+
+    // Opeartional note:
+    // all the properties will come thru as undefined when page is first loaded
+    //   in this case we say update since the card need to be initially painted
+
+    if (!this._config) {
+      console.log(' - SU ABORT, no config');
+      return false;
     }
-    //console.log('----- shouldUpdate(' + this._hostname + ') - ENTRY');
-    let bShouldStatus: boolean = true;
 
-    this._updateSensorAvailability();
-
+    // check in order of lightest-weight checks first
+    let bShouldStatus: boolean = false;
     if (changedProps.has('_config')) {
-      //console.log('shouldUpdate(' + this._hostname + ') = [' + true + '] - CONFIG');
+      // this will catch our changedProps['_config'] == undefined case in which case we will initially paint our cards
+      console.log(' - SU config present');
       bShouldStatus = true;
-    } else if (this.hass && this._config) {
-      const oldHass = changedProps.get('hass') as HomeAssistant | undefined;
+    } else if (changedProps.has('_cardMinutesSinceUpdate')) {
+      console.log(' - SU card last updated changed');
+      bShouldStatus = true;
+    } else if (this.hass && this._config && changedProps.has('hass')) {
+      const oldHass = changedProps.get('hass') as HomeAssistant;
 
       if (oldHass && this._configEntityId) {
         bShouldStatus = oldHass.states[this._configEntityId] !== this.hass.states[this._configEntityId];
-        //console.log('shouldUpdate(' + this._hostname + ') = [' + bShouldStatus + '] HASS');
+        if (bShouldStatus) {
+          console.log(' - SU hass state changed');
+        } else {
+          console.log(' - SU !! NO hass state change');
+        }
       }
     }
+    /*
+    else if ( this.hass && this._configEntityId) {
+      console.log(' - SU NO changes but paint card!');
+      // force update so we paint cards early
+      bShouldStatus = true;
+    }
+    */
 
-    //console.log('shouldUpdate(' + this._hostname + ') = [' + true + '] other');
-    //console.log('----- shouldUpdate(' + this._hostname + ') - EXIT');
+    console.log('\\---- shouldUpdate(' + this._hostname + ') - EXIT w/' + bShouldStatus);
     return bShouldStatus;
   }
 
-  // https://lit.dev/docs/components/rendering/
+  protected willUpdate(changedProps: PropertyValues): void {
+    // Called before update() (which in-turn calls render()) to compute values needed during the update.
+    // https://lit.dev/docs/components/lifecycle/#willupdate
+    //console.log('/---- willUpdate(' + this._hostname + ') - ENTRY');
+    // list our keys
+    this._debugShowProps(changedProps, 'willUpdate()');
+    //console.log('\\---- willUpdate(' + this._hostname + ') - EXIT');
+  }
+
   protected render(): TemplateResult | void {
+    // Called by update() and should be implemented to return a renderable result (such as a TemplateResult) used to render the component's DOM.
+    // https://lit.dev/docs/components/rendering/
+    // https://lit.dev/docs/components/lifecycle/#render
     // Check for stateObj or other necessary things and render a warning if missing
     if (this._showDebug) {
       console.log('- render(' + this._hostname + ')');
@@ -427,7 +326,7 @@ export class RPiMonitorCard extends LitElement {
       return this.showError(localize('common.show_error'));
     }
 
-    if (this._configEntityId && !this._sensorAvailable) {
+    if (this._configEntityId && !this._stateInfoAvailable) {
       const warningMessage = 'Entity Unavailable: ' + this._configEntityId;
       return this.showWarning(warningMessage);
     }
@@ -439,13 +338,13 @@ export class RPiMonitorCard extends LitElement {
     }
 
     // don't let render happen on no-sensor!
-    if (this._sensorAvailable == false) {
+    if (!this._stateInfoAvailable) {
       console.log('?? Render w/o sensor!! (' + this._hostname + ')');
       return;
     }
 
     let cardHtml: TemplateResult = html``;
-    //console.log('----- render(' + this._hostname + ') - ENTRY');
+    //console.log('/---- render(' + this._hostname + ') - ENTRY');
 
     if (this._firstTime) {
       if (this._showDebug) {
@@ -462,14 +361,7 @@ export class RPiMonitorCard extends LitElement {
       this._firstTime = false;
     }
 
-    // OS Age is shown (default = True) unless turned off
-    const showOsAge = this._config.show_os_age != undefined ? this._config.show_os_age : true;
-    // Card Update Age is shown (default = True) unless turned off
-    const showCardAge = this._config.show_update_age != undefined ? this._config.show_update_age : true;
-    const showDaemonUpdNeed = this._config.show_daemon_upd != undefined ? this._config.show_daemon_upd : true;
-    const showCardName = this._config.show_title != undefined ? this._config.show_title : true;
-
-    if (showDaemonUpdNeed) {
+    if (this._showDaemonUpdNeed) {
       // get Daemon current version
       const reporter_version: string = this._getAttributeValueForKey(Constants.RPI_SCRIPT_VER_KEY);
       const reportParts: string[] = reporter_version.split(' ');
@@ -486,28 +378,37 @@ export class RPiMonitorCard extends LitElement {
     }
 
     const rpi_fqdn: string = this._getAttributeValueForKey(Constants.RPI_FQDN_KEY);
-    const ux_release: string = showOsAge == true ? this._getAttributeValueForKey(Constants.RPI_NIX_RELEASE_KEY) : '';
+    const ux_release: string = this._showOsAge == true ? this._getAttributeValueForKey(Constants.RPI_NIX_RELEASE_KEY) : '';
 
-    const daemon_update_status: string = showDaemonUpdNeed ? this._computeDaemonUpdMessage(this.currentDaemonVersion) : '';
-    const card_timestamp: string = showCardAge == true ? this._cardUpdateString : '';
+    const daemon_update_status: string = this._showDaemonUpdNeed ? this._computeDaemonUpdMessage(this.currentDaemonVersion) : '';
+    let cardUpdateString: string = '';
+    if (this._showCardAge) {
+      if (this._cardMinutesSinceUpdate == 0) {
+        cardUpdateString = 'just now';
+      } else {
+        const suffix = this._cardMinutesSinceUpdate == 1 ? '' : 's';
+        cardUpdateString = this._cardMinutesSinceUpdate + ' min' + suffix + ' ago';
+      }
+    }
+    const card_timestamp: string = this._showCardAge == true ? cardUpdateString : '';
     //const card_timestamp: string = '{bad value}';
 
     let cardName: string = 'RPi monitor ' + rpi_fqdn;
     cardName = this._config.name_prefix != undefined ? this._config.name_prefix + ' ' + rpi_fqdn : cardName;
     cardName = this._config.name != undefined ? this._config.name : cardName;
 
-    if (showCardName == false) {
+    if (this._showCardName == false) {
       cardName = '';
     }
 
-    const last_heard_full_class = showCardName == false ? 'last-heard-full-notitle' : 'last-heard-full';
-    const last_heard_class = showCardName == false ? 'last-heard-notitle' : 'last-heard';
+    const last_heard_full_class = this._showCardName == false ? 'last-heard-full-notitle' : 'last-heard-full';
+    const last_heard_class = this._showCardName == false ? 'last-heard-notitle' : 'last-heard';
 
-    const os_name_full_class = showCardName == false ? 'os-name-full-notitle' : 'os-name-full';
-    const os_name_class = showCardName == false ? 'os-name-notitle' : 'os-name';
+    const os_name_full_class = this._showCardName == false ? 'os-name-full-notitle' : 'os-name-full';
+    const os_name_class = this._showCardName == false ? 'os-name-notitle' : 'os-name';
 
-    const daemon_update_full_class = showCardName == false ? 'daemon-update-full-notitle' : 'daemon-update-full';
-    const daemon_update_class = showCardName == false ? 'daemon-update-notitle' : 'daemon-update';
+    const daemon_update_full_class = (this._showCardName == false ? 'daemon-update-full-notitle' : 'daemon-update-full') + ' center';
+    const daemon_update_class = (this._showCardName == false ? 'daemon-update-notitle' : 'daemon-update') + ' center';
 
     if (this._showFullCard) {
       // our FULL card
@@ -532,7 +433,7 @@ export class RPiMonitorCard extends LitElement {
             ${fullRows}
             <div id="card-timestamp" class=${last_heard_full_class}>${card_timestamp}</div>
             <div id="os-name" class=${os_name_full_class}>${ux_release}</div>
-            <div id="daemon-update" class="${daemon_update_full_class} center">${daemon_update_status}</div>
+            <div id="daemon-update" class=${daemon_update_full_class}>${daemon_update_status}</div>
           </div>
         </ha-card>
       `;
@@ -559,21 +460,31 @@ export class RPiMonitorCard extends LitElement {
             ${glanceRows}
             <div id="card-timestamp" class=${last_heard_class}>${card_timestamp}</div>
             <div id="os-name" class=${os_name_class}>${ux_release}</div>
-            <div id="daemon-update" class="${daemon_update_class} center">${daemon_update_status}</div>
+            <div id="daemon-update" class=${daemon_update_class}>${daemon_update_status}</div>
           </div>
         </ha-card>
       `;
     }
-    //console.log('----- render(' + this._hostname + ') - EXIT');
+    console.log('/ ---- render() ' + this._hostname + ' ---- :');
+    console.log(cardHtml);
+    //console.log('\\---- render(' + this._hostname + ') - EXIT');
     return cardHtml;
   }
 
-  // Here we need to refresh the values after card has been initially rendered
   protected updated(changedProps: PropertyValues): void {
-    //console.log('----- updated(' + this._hostname + ') - ENTRY');
+    // Called whenever the component’s update finishes and the element's DOM has been updated and rendered.
+    // NOTE: Implement updated() to perform tasks that use element DOM after an update. For example,
+    //  code that performs animation may need to measure the element DOM.
+    // https://lit.dev/docs/components/lifecycle/#updated
+    // Here we need to refresh the values after card has been initially rendered
+    //console.log('/---- updated(' + this._hostname + ') - ENTRY');
     if (this._showDebug) {
       console.log('- updated(' + this._hostname + ')');
     }
+
+    // list our keys
+    this._debugShowProps(changedProps, 'Updated()');
+
     if (this._config) {
       // update cards' theme if changed
       if (this.hass) {
@@ -583,11 +494,10 @@ export class RPiMonitorCard extends LitElement {
         }
       }
 
-      if (this.hass && this._configEntityId) {
-        const stateObj = this.hass.states[this._configEntityId];
-        if (!stateObj) {
-          this._stopCardRefreshTimer();
-        }
+      this._ensureStateInfoAvail();
+      if (!this._stateInfoAvailable) {
+        // if we lost our state information, then stop our card timer...
+        this._stopCardRefreshTimer();
       }
 
       //console.log('- changed Props: [' + changedProps + ']');
@@ -595,110 +505,113 @@ export class RPiMonitorCard extends LitElement {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const root: any = this.shadowRoot;
 
-      if (this._sensorAvailable) {
-        // update common label(s)
-        const ux_release: string = this._getAttributeValueForKey(Constants.RPI_NIX_RELEASE_KEY);
-        const rlsNameColor = this._computeOsReleaseColor(ux_release);
-        if (rlsNameColor != '') {
-          const labelElement = root.getElementById('os-name');
-          labelElement.style.setProperty('color', rlsNameColor);
-        }
-
-        // apply color if RPi daemon should be updated
-        const daemonUpdColor = this._computeDaemonUpdateVersionColor(this.currentDaemonVersion);
-        if (daemonUpdColor != '') {
-          const labelElement = root.getElementById('daemon-update');
-          labelElement.style.setProperty('color', daemonUpdColor);
-        }
-
-        // now apply color if our entry is OLD
-        const intervalColor = this._computeReporterAgeColor(this._cardSecondsSinceUpdate);
-        if (intervalColor != '' && intervalColor != undefined) {
-          const labelElement = root.getElementById('card-timestamp');
-          labelElement.style.setProperty('color', intervalColor);
-        }
-
-        if (this._showFullCard) {
-          // update our FULL card
-          for (const currName in this._cardFullCssIDs) {
-            const currLabelID = this._cardFullCssIDs[currName];
-            const currAttrKey = this._cardFullElements[currName];
-            const rawValue = this._getAttributeValueForKey(currAttrKey);
-            const latestValue = this._getFullCardValueForAttributeKey(currAttrKey);
-            //          if (currAttrKey == Constants.RPI_MEMORY_USED_PERCENT_KEY) {
-            //            console.log('- FULL memory latestValue=[' + latestValue + ']');
-            //          }
-            const labelElement = root.getElementById(currLabelID);
-            labelElement.textContent = latestValue;
-            const currIconCssID = this._cardFullIconCssIDs[currName];
-            const iconElement = root.getElementById(currIconCssID);
-            if (currAttrKey == Constants.RPI_FS_USED_PERCENT_KEY) {
-              const color = this._computeFileSystemUsageColor(rawValue);
-              if (color != '') {
-                labelElement.style.setProperty('color', color);
-                iconElement.style.setProperty('color', color);
-              }
-            }
-            if (currAttrKey == Constants.RPI_MEMORY_USED_PERCENT_KEY) {
-              const color = this._computeMemoryUsageColor(latestValue.replace(' %', ''));
-              if (color != '') {
-                labelElement.style.setProperty('color', color);
-                iconElement.style.setProperty('color', color);
-              }
-            }
-            if (currAttrKey == Constants.RPI_TEMPERATURE_IN_C_KEY) {
-              const color = this._computeTemperatureColor(rawValue);
-              if (color != '') {
-                labelElement.style.setProperty('color', color);
-                iconElement.style.setProperty('color', color);
-              }
-            }
+      if (this._stateInfoAvailable) {
+        if (changedProps.get('_cardMinutesSinceUpdate') != undefined) {
+          // now apply card age color if our entry is OLD
+          const intervalColor = this.colorHelpers.calculateReporterAgeColor(this._cardMinutesSinceUpdate);
+          if (intervalColor != '') {
+            const labelElement = root.getElementById('card-timestamp');
+            labelElement.style.setProperty('color', intervalColor);
           }
-        } else {
-          // update our GLANCE card
-          for (const currName in this._cardGlanceCssIDs) {
-            const currLabelID = this._cardGlanceCssIDs[currName];
-            const currAttrKey = this._cardGlanceElements[currName];
-            const rawValue = this._getAttributeValueForKey(currAttrKey);
-            const latestValue = this._getGlanceCardValueForAttributeKey(currAttrKey);
-            //          if (currAttrKey == Constants.RPI_MEMORY_USED_PERCENT_KEY) {
-            //            console.log('- GLNC memory latestValue=[' + latestValue + ']');
-            //          }
-            const labelElement = root.getElementById(currLabelID);
-            labelElement.textContent = latestValue;
-            const currIconCssID = this._cardGlanceIconCssIDs[currName];
-            const iconElement = root.getElementById(currIconCssID);
-            if (currAttrKey == Constants.RPI_FS_USED_PERCENT_KEY) {
-              const color = this._computeFileSystemUsageColor(rawValue);
-              if (color != '') {
-                labelElement.style.setProperty('color', color);
-                iconElement.style.setProperty('color', color);
-              }
-            }
-            if (currAttrKey == Constants.RPI_MEMORY_USED_PERCENT_KEY) {
-              const color = this._computeMemoryUsageColor(latestValue);
-              if (color != '') {
-                labelElement.style.setProperty('color', color);
-                iconElement.style.setProperty('color', color);
-              }
-            }
-            if (currAttrKey == Constants.RPI_TEMPERATURE_IN_C_KEY) {
-              // don't place temp scale (C or F) when 'n/a'
-              if (latestValue != 'n/a') {
-                const color = this._computeTemperatureColor(rawValue);
+        }
+        if (changedProps.has('hass')) {
+          // update common label(s)
+          const ux_release: string = this._getAttributeValueForKey(Constants.RPI_NIX_RELEASE_KEY);
+          const rlsNameColor = this.colorHelpers.calculateOsReleaseColor(ux_release, this._config.os_age);
+          if (rlsNameColor != '') {
+            const labelElement = root.getElementById('os-name');
+            labelElement.style.setProperty('color', rlsNameColor);
+          }
+
+          // apply color if RPi daemon should be updated
+          const daemonUpdColor = this.colorHelpers.calculateDaemonUpdateVersionColor(this.currentDaemonVersion, this.latestDaemonVersions);
+          if (daemonUpdColor != '') {
+            const labelElement = root.getElementById('daemon-update');
+            labelElement.style.setProperty('color', daemonUpdColor);
+          }
+
+          if (this._showFullCard) {
+            // update our FULL card
+            for (const currName in this._cardFullCssIDs) {
+              const currLabelID = this._cardFullCssIDs[currName];
+              const currAttrKey = this._cardFullElements[currName];
+              const rawValue = this._getAttributeValueForKey(currAttrKey);
+              const latestValue = this._getFullCardValueForAttributeKey(currAttrKey);
+              //          if (currAttrKey == Constants.RPI_MEMORY_USED_PERCENT_KEY) {
+              //            console.log('- FULL memory latestValue=[' + latestValue + ']');
+              //          }
+              const labelElement = root.getElementById(currLabelID);
+              labelElement.textContent = latestValue;
+              const currIconCssID = this._cardFullIconCssIDs[currName];
+              const iconElement = root.getElementById(currIconCssID);
+              if (currAttrKey == Constants.RPI_FS_USED_PERCENT_KEY) {
+                const color = this.colorHelpers.calculateFileSystemUsageColor(rawValue, this._config.fs_severity);
                 if (color != '') {
                   labelElement.style.setProperty('color', color);
                   iconElement.style.setProperty('color', color);
                 }
-                const scaleLabelElement = root.getElementById(this.kClassIdTempScale);
-                scaleLabelElement.textContent = this._getTemperatureScale();
+              }
+              if (currAttrKey == Constants.RPI_MEMORY_USED_PERCENT_KEY) {
+                const color = this.colorHelpers.calculateMemoryUsageColor(latestValue.replace(' %', ''), this._config.memory_severity);
+                if (color != '') {
+                  labelElement.style.setProperty('color', color);
+                  iconElement.style.setProperty('color', color);
+                }
+              }
+              if (currAttrKey == Constants.RPI_TEMPERATURE_IN_C_KEY) {
+                const color = this.colorHelpers.calculateTemperatureColor(rawValue, this._config.temp_severity);
+                if (color != '') {
+                  labelElement.style.setProperty('color', color);
+                  iconElement.style.setProperty('color', color);
+                }
+              }
+            }
+          } else {
+            // update our GLANCE card
+            for (const currName in this._cardGlanceCssIDs) {
+              const currLabelID = this._cardGlanceCssIDs[currName];
+              const currAttrKey = this._cardGlanceElements[currName];
+              const rawValue = this._getAttributeValueForKey(currAttrKey);
+              const latestValue = this._getGlanceCardValueForAttributeKey(currAttrKey);
+              //          if (currAttrKey == Constants.RPI_MEMORY_USED_PERCENT_KEY) {
+              //            console.log('- GLNC memory latestValue=[' + latestValue + ']');
+              //          }
+              const labelElement = root.getElementById(currLabelID);
+              labelElement.textContent = latestValue;
+              const currIconCssID = this._cardGlanceIconCssIDs[currName];
+              const iconElement = root.getElementById(currIconCssID);
+              if (currAttrKey == Constants.RPI_FS_USED_PERCENT_KEY) {
+                const color = this.colorHelpers.calculateFileSystemUsageColor(rawValue, this._config.fs_severity);
+                if (color != '') {
+                  labelElement.style.setProperty('color', color);
+                  iconElement.style.setProperty('color', color);
+                }
+              }
+              if (currAttrKey == Constants.RPI_MEMORY_USED_PERCENT_KEY) {
+                const color = this.colorHelpers.calculateMemoryUsageColor(latestValue, this._config.memory_severity);
+                if (color != '') {
+                  labelElement.style.setProperty('color', color);
+                  iconElement.style.setProperty('color', color);
+                }
+              }
+              if (currAttrKey == Constants.RPI_TEMPERATURE_IN_C_KEY) {
+                // don't place temp scale (C or F) when 'n/a'
+                if (latestValue != 'n/a') {
+                  const color = this.colorHelpers.calculateTemperatureColor(rawValue, this._config.temp_severity);
+                  if (color != '') {
+                    labelElement.style.setProperty('color', color);
+                    iconElement.style.setProperty('color', color);
+                  }
+                  const scaleLabelElement = root.getElementById(Constants.kClassIdTempScale);
+                  scaleLabelElement.textContent = this._getTemperatureScale();
+                }
               }
             }
           }
         }
       }
     }
-    //console.log('----- updated(' + this._hostname + ') - EXIT');
+    //console.log('\\---- updated(' + this._hostname + ') - EXIT');
   }
 
   private _handleAction(ev: ActionHandlerEvent): void {
@@ -729,7 +642,8 @@ export class RPiMonitorCard extends LitElement {
   // ---------------------------------------------------------------------------
 
   private _startCardRefreshTimer(): void {
-    this._updateTimerID = setInterval(() => this._handleCardUpdateTimerExpiration(), 1000);
+    // set timer to refresh every 15 seconds
+    this._updateTimerID = setInterval(() => this._handleCardUpdateTimerExpiration(), 15 * 1000);
     if (this._showDebug) {
       console.log('TIMER: (' + this._hostname + ') started');
     }
@@ -750,97 +664,47 @@ export class RPiMonitorCard extends LitElement {
     //  timestamp portion of card
     //
     //console.log('TIMER: (' + this._hostname + ') timeout ENTRY');
-    const [card_timestamp_value, sinceInMinutes] = this._getRelativeTimeSinceUpdate();
-    //console.log('-- card_timestamp_value=[' + card_timestamp_value + '] sinceInMinutes=[' + sinceInMinutes + ']');
-    if (card_timestamp_value && card_timestamp_value.length > 0) {
-      let card_timestamp = card_timestamp_value;
-      //console.log(' HCUTE (' + this._hostname + ') card_timestamp_value=[' + card_timestamp_value + ']');
-      // BUGFIX let's NOT show 'in NaN weeks' message on reload...
-      if (card_timestamp_value.includes('NaN')) {
-        console.log(' HCUTE (DBG) (' + this._hostname + ') card_timestamp_value=[' + card_timestamp_value + ']');
-        //card_timestamp = 'waiting for report...';
-        //needCardFlush = true;  // we have a system bug causing a mis-fire... don't clear the card...
-        card_timestamp = '{bad value}';
-      }
-      // set properties which should cause our card update
-      if (this._cardUpdateString != card_timestamp) {
-        this._cardUpdateString = card_timestamp;
-      }
-      if (this._cardSecondsSinceUpdate != sinceInMinutes) {
-        this._cardSecondsSinceUpdate = sinceInMinutes;
-      }
+    const sinceMinutes = this._calculateRelativeMinutesSinceUpdate();
+    // set properties which should cause our card update
+    if (this._cardMinutesSinceUpdate != sinceMinutes) {
+      this._cardMinutesSinceUpdate = sinceMinutes;
     }
     //console.log('TIMER: (' + this._hostname + ') timeout EXIT');
   }
 
-  private _logChangeMessage(message: string): void {
-    const logMessage = '(' + this._hostname + '): ' + message;
-    if (this._showDebug) {
-      console.log(logMessage);
-    }
+  private _debugShowProps(changedProps: PropertyValues, message: string): void {
+    console.log('/ ---- ' + message + ' ' + this._hostname + ' ---- :');
+    console.log(changedProps);
   }
 
-  private _updateSensorAvailability(): void {
-    let availChanged: boolean = false;
-    if (this.hass && this._config) {
-      const stateObj = this._configEntityId ? this.hass.states[this._configEntityId] : undefined;
-
-      if (!this._configEntityId && !stateObj) {
-        this._sensorAvailable = false;
-        availChanged = true; // force output in this case
+  private _ensureStateInfoAvail() {
+    // keep our global status up-to-date
+    if (this._configEntityId && this.hass) {
+      const backingState = this._configEntityId ? this.hass.states[this._configEntityId] : undefined;
+      if (backingState) {
+        // um, yeah, we have to go one step further so empty card with bad values doesn't display
+        if (backingState.state == 'unavailable') {
+          this._stateInfoAvailable = false; // well, not quite yet
+        } else {
+          this._stateInfoAvailable = true; // yep!!
+        }
       } else {
-        if (this._configEntityId) {
-          try {
-            const tmpAvail = this.hass.states[this._configEntityId].state != 'unavailable';
-            availChanged = this._sensorAvailable != tmpAvail ? true : false;
-            this._sensorAvailable = tmpAvail;
-          } catch (error) {
-            this._sensorAvailable = false;
-            availChanged = true; // force output in this case
-          }
-        }
+        this._stateInfoAvailable = false; // well, not quite yet
       }
-    } else {
-      this._sensorAvailable = false;
-      availChanged = true; // force output in this case
-    }
-    if (availChanged) {
-      this._logChangeMessage('* SENSOR available: ' + this._sensorAvailable);
     }
   }
 
-  /*
-  private async loadDaemonReleases(): Promise<void> {
-    this.latestDaemonVersions = await fetch(this.kMQTT_DAEMON_RELEASE_URL).then((response) => response.text().then(this._loadDaemonReleaseInfo));
-    console.log('LDR (' + this._hostname + ') latestDaemonVersions=[' + this.latestDaemonVersions + '](' + this.latestDaemonVersions.length + ')');
-  }
-
-  private _loadDaemonReleaseInfo(retrievedText: string): string[] {
-    //console.log('LDRI retrievedText=[' + retrievedText + ']');
-    let foundVersions: string[] = [];
-    if (retrievedText) {
-      foundVersions = []; // silence FALSE! compiler-detect error
-      const lines: string[] = retrievedText.split('\n');
-      //console.log('FAR lines=[' + lines + '](' + lines.length + ')');
-      for (let index: number = 0; index < lines.length; index++) {
-        const currLine: string = lines[index];
-        //console.log('FAR currLine=[' + currLine + '](' + currLine.length + ')');
-        if (currLine.length > 0) {
-          const lineParts: string[] = currLine.split(' ');
-          if (lineParts.length > 0) {
-            //console.log('FAR lineParts(' + index + ')=[' + lineParts + '](' + lineParts.length + ')');
-            if (!foundVersions.includes(lineParts[0])) {
-              // add only non-duplicates
-              foundVersions.push(lineParts[0]);
-            }
-          }
-        }
+  private _ensureWeHaveHostName() {
+    // as soon as we get our real hostname post it globally
+    if (this._hostname.length == 0 || this._hostname == this._configEntityId) {
+      const tempHostname: string = this._getAttributeValueForKey(Constants.RPI_HOST_NAME_KEY);
+      if (tempHostname && tempHostname.length > 0) {
+        this._hostname = tempHostname;
+      } else {
+        this._hostname = this._configEntityId ? this._configEntityId : '-not-set-';
       }
     }
-    //console.log('* foundVersions=[' + foundVersions + ']');
-    return foundVersions;
   }
-  */
 
   private _computeDaemonUpdMessage(currentReporterVersion: string): string {
     let updateStatusMessage: string = '';
@@ -849,7 +713,16 @@ export class RPiMonitorCard extends LitElement {
       console.log('- RNDR latestDaemonVersions=[' + this.latestDaemonVersions + ']');
     }
     if (this.latestDaemonVersions.length > 0 && currentReporterVersion != '') {
-      if (currentReporterVersion != this.latestDaemonVersions[0]) {
+      if (currentReporterVersion < this.latestDaemonVersions[0]) {
+        // test code
+        /*
+        if (currentReporterVersion > this.latestDaemonVersions[0]) {
+          console.log(currentReporterVersion + ' is > than ' + this.latestDaemonVersions[0]);
+        } else {
+          console.log(currentReporterVersion + ' is < than ' + this.latestDaemonVersions[0]);
+        }
+        */
+        // test code
         // reporter version is not latest
         updateStatusMessage = currentReporterVersion + ' ---> ' + this.latestDaemonVersions[0];
       }
@@ -863,243 +736,23 @@ export class RPiMonitorCard extends LitElement {
     return updateStatusMessage;
   }
 
-  private _getRelativeTimeSinceUpdate(): [string, number] {
-    const stateObj = this._configEntityId ? this.hass.states[this._configEntityId] : undefined;
-    let desiredValue: string = '';
+  private _calculateRelativeMinutesSinceUpdate(): number {
     let desiredMinutes: number = 0;
-    let minutesValue: string = '';
-    if (this.hass.locale && stateObj) {
-      try {
-        const stateStrInterp = computeStateDisplay(this.hass?.localize, stateObj, this.hass.locale);
-        // console.log('- grtsu card stateStrInterp=[' + stateStrInterp + ']');
-        const relativeInterp = stateStrInterp === undefined ? '{unknown}' : this._formatTimeAgo(stateStrInterp);
-        // console.log('   relativeInterp=[' + relativeInterp + ']');
-        desiredValue = this._sensorAvailable ? relativeInterp : '{unknown}';
-        // console.log('   desiredValue=[' + desiredValue + ']');
-        const lineParts: string[] = relativeInterp.split(' ');
-        minutesValue = lineParts[0];
-      } catch (error) {
-        console.log('GRTSU - exception:');
-        console.error(error);
-      }
-
-      if (minutesValue.includes('just') || minutesValue.includes('unknown')) {
-        desiredMinutes = 0;
-      } else {
-        desiredMinutes = Number(minutesValue);
-      }
+    const backingState = this._configEntityId ? this.hass.states[this._configEntityId] : undefined;
+    // publish so we don't check this again
+    this._stateInfoAvailable = backingState ? true : false;
+    if (backingState) {
+      const stateTime: string = backingState.state;
+      //console.log('state:' + stateTime + ', chg:' + stateLastChangedTime + ', upd:' + stateLastUpdatedTime);
+      const stateDate: Date = new Date(stateTime);
+      const stateSeconds = Math.round(stateDate.getTime() / 1000);
+      const currSeconds: number = Math.round(new Date().getTime() / 1000);
+      //if (this._hostname == 'pip2iotgw') {
+      //  console.log('- GRSSU (' + this._hostname + ') stateSec:' + (currSeconds - stateSeconds));
+      //}
+      desiredMinutes = Math.round((currSeconds - stateSeconds) / 60);
     }
-    return [desiredValue, desiredMinutes];
-  }
-
-  private _formatTimeAgo(time: string): string {
-    const date: Date = new Date((time || '').replace(/-/g, '/').replace(/[TZ]/g, ' '));
-    const diff: number = (new Date().getTime() - date.getTime()) / 1000;
-    const day_diff: number = Math.floor(diff / 86400);
-    const year: number = date.getFullYear();
-    const month: number = date.getMonth() + 1;
-    const day: number = date.getDate();
-
-    if (isNaN(day_diff) || day_diff < 0 || day_diff >= 31)
-      return year.toString() + '-' + (month < 10 ? '0' + month.toString() : month.toString()) + '-' + (day < 10 ? '0' + day.toString() : day.toString());
-
-    let rslt: string = '{unknown}';
-    if (day_diff == 0) {
-      if (diff < 60) {
-        rslt = 'just now';
-      } else if (diff < 120) {
-        rslt = '1 min ago';
-      } else if (diff < 3600) {
-        rslt = Math.floor(diff / 60) + ' mins ago';
-      } else if (diff < 7200) {
-        rslt = '1 hr ago';
-      } else if (diff < 86400) {
-        rslt = Math.floor(diff / 3600) + ' hrs ago';
-      }
-    } else if (day_diff == 1) {
-      rslt = 'Yesterday';
-    } else if (day_diff < 7) {
-      rslt = day_diff + ' days ago';
-    } else if (day_diff < 31) {
-      rslt = Math.ceil(day_diff / 7) + ' wks ago';
-    }
-    return rslt;
-  }
-
-  private _getIconNameForPercent(percent: string): string {
-    // return name of icon we should show for given %
-    let desiredIconName = '';
-    for (const currIconName in this._circleIconsValueByName) {
-      const currMaxValue = this._circleIconsValueByName[currIconName];
-      if (percent <= currMaxValue) {
-        desiredIconName = currIconName;
-        break;
-      }
-    }
-    return desiredIconName;
-  }
-
-  private _computeReporterAgeColor(numberValue: number): string {
-    const sections = this._colorReportPeriodsAgoDefault;
-
-    //console.log('color-table: sections=[' + sections + ']');
-    //return '';
-
-    let color: undefined | string = undefined;
-
-    sections.forEach((section) => {
-      if (numberValue >= section.from && numberValue <= section.to) {
-        color = section.color;
-      }
-    });
-
-    if (color == undefined || color == 'default') color = '';
-    return color;
-  }
-
-  private _computeTemperatureColor(value: string): string {
-    const config = this._config;
-    const numberValue = Number(value);
-    const sections = config.temp_severity ? config.temp_severity : this._colorTemperatureDefault;
-
-    //console.log('color-table: sections=[' + sections + ']');
-    //return '';
-
-    let color: undefined | string;
-
-    if (!isNaN(numberValue)) {
-      sections.forEach((section) => {
-        if (numberValue >= section.from && numberValue <= section.to) {
-          color = section.color;
-          if (this._showDebug) {
-            const logMessage =
-              '_computeTemperatureColor() - value=[' + value + '] matched(from=' + section.from + ', to=' + section.to + ', color=' + color + ')';
-            console.log(logMessage);
-          }
-        }
-      });
-    }
-    if (this._showDebug) {
-      const logMessage = '_computeTemperatureColor() - value=[' + value + '] returns(color=' + color + ')';
-      console.log(logMessage);
-    }
-    if (color == undefined || color == 'default') color = '';
-    return color;
-  }
-
-  private _computeFileSystemUsageColor(value: string): string {
-    const config = this._config;
-    const numberValue = Number(value);
-    const sections = config.fs_severity ? config.fs_severity : this._colorUsedSpaceDefault;
-
-    //console.log('color-table: sections=[' + _colorUsedMemoryDefault + ']');
-    //return '';
-
-    let color: undefined | string;
-
-    if (!isNaN(numberValue)) {
-      sections.forEach((section) => {
-        if (numberValue >= section.from && numberValue <= section.to) {
-          color = section.color;
-          if (this._showDebug) {
-            const logMessage =
-              '_computeFileSystemUsageColor() - value=[' + value + '] matched(from=' + section.from + ', to=' + section.to + ', color=' + color + ')';
-            console.log(logMessage);
-          }
-        }
-      });
-    }
-    if (this._showDebug) {
-      const logMessage = '_computeFileSystemUsageColor() - value=[' + value + '] returns(color=' + color + ')';
-      console.log(logMessage);
-    }
-
-    if (color == undefined || color == 'default') color = '';
-    return color;
-  }
-
-  private _computeMemoryUsageColor(value: string): string {
-    const config = this._config;
-    const numberValue = Number(value);
-    const sections = config.memory_severity ? config.memory_severity : this._colorUsedMemoryDefault;
-
-    let color: undefined | string;
-
-    if (!isNaN(numberValue)) {
-      sections.forEach((section) => {
-        if (numberValue >= section.from && numberValue <= section.to) {
-          color = section.color;
-          if (this._showDebug) {
-            const logMessage =
-              '_computeMemoryUsageColor() - value=[' + value + '] matched(from=' + section.from + ', to=' + section.to + ', color=' + color + ')';
-            console.log(logMessage);
-          }
-        }
-      });
-    }
-    if (this._showDebug) {
-      const logMessage = '_computeMemoryUsageColor() - value=[' + value + '] returns(color=' + color + ')';
-      console.log(logMessage);
-    }
-
-    if (color == undefined || color == 'default') color = '';
-    return color;
-  }
-
-  private _computeOsReleaseColor(osName: string): string {
-    const config = this._config;
-    const sections = config.os_age ? config.os_age : this._colorReleaseDefault;
-
-    //console.log('color-table: sections=[' + sections + ']');
-    //return '';
-
-    let color: undefined | string = 'default';
-
-    sections.forEach((section) => {
-      if (osName === section.os) {
-        color = section.color;
-        if (this._showDebug) {
-          const logMessage = '_computeOsReleaseColor() - value=[' + osName + '] matched(os=' + section.os + ', color=' + color + ')';
-          console.log(logMessage);
-        }
-      }
-    });
-    if (this._showDebug) {
-      const logMessage = '_computeOsReleaseColor() - value=[' + osName + '] returns(color=' + color + ')';
-      console.log(logMessage);
-    }
-    if (color == undefined || color == 'default') color = '';
-    return color;
-  }
-
-  private _computeDaemonUpdateVersionColor(currentReporterVersion: string): string {
-    //console.log('color-table: sections=[' + sections + ']');
-    //return '';
-
-    let color: undefined | string = undefined;
-
-    if (this.latestDaemonVersions.length > 0 && currentReporterVersion != '') {
-      if (this.latestDaemonVersions[0] == currentReporterVersion) {
-        // daemon is at latest
-        color = 'default';
-      } else if (this.latestDaemonVersions.includes(currentReporterVersion)) {
-        // daemon is recent
-        color = 'orange';
-      } else {
-        // daemon is old (not even in latest or stable)
-        color = 'red';
-      }
-    } else {
-      // daemon values are missing???
-      color = 'orange';
-    }
-    if (this._showDebug) {
-      const logMessage = '_computeDaemonUpdateVersionColor() - value=[' + currentReporterVersion + '] returns(color=' + color + ')';
-      console.log(logMessage);
-    }
-
-    if (color == undefined || color == 'default') color = '';
-    return color;
+    return desiredMinutes;
   }
 
   private _filterUptime(uptimeRaw: string): string {
@@ -1142,34 +795,6 @@ export class RPiMonitorCard extends LitElement {
     return desiredValue;
   }
 
-  private _emptyCardValuesWhileWaitingForSensor(): void {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const root: any = this.shadowRoot;
-
-    if (this._sensorAvailable) {
-      if (this._showFullCard) {
-        // clear values for our FULL card
-        for (const currName in this._cardFullCssIDs) {
-          const currLabelID = this._cardFullCssIDs[currName];
-          const labelElement = root.getElementById(currLabelID);
-          labelElement.textContent = '';
-        }
-      } else {
-        // clear values for our GLANCE card
-        for (const currName in this._cardGlanceCssIDs) {
-          const currLabelID = this._cardGlanceCssIDs[currName];
-          const currAttrKey = this._cardGlanceElements[currName];
-          const labelElement = root.getElementById(currLabelID);
-          labelElement.textContent = '';
-          if (currAttrKey == Constants.RPI_TEMPERATURE_IN_C_KEY) {
-            const scaleLabelElement = root.getElementById(this.kClassIdTempScale);
-            scaleLabelElement.textContent = this._getTemperatureScale();
-          }
-        }
-      }
-    }
-  }
-
   private _generateFullsizeCardRows(): TemplateResult[] {
     // create the rows for the GLANCE card
     const rowsArray: TemplateResult[] = [];
@@ -1183,7 +808,7 @@ export class RPiMonitorCard extends LitElement {
       let currIconName = this._cardFullIconNames[currName];
       if (currAttributeKey == Constants.RPI_FS_USED_PERCENT_KEY) {
         const latestRawValue = this._getAttributeValueForKey(currAttributeKey);
-        currIconName = this._getIconNameForPercent(latestRawValue);
+        currIconName = this.colorHelpers.getIconNameForPercent(latestRawValue);
       }
       const currIconCssID = this._cardFullIconCssIDs[currName];
       // get ID for values that need updating
@@ -1233,14 +858,14 @@ export class RPiMonitorCard extends LitElement {
       }
       let currIconName = this._cardGlanceIconNames[currName];
       if (currAttributeKey == Constants.RPI_FS_USED_PERCENT_KEY) {
-        currIconName = this._getIconNameForPercent(interpValue);
+        currIconName = this.colorHelpers.getIconNameForPercent(interpValue);
       }
       const currLabelCssID = this._cardGlanceCssIDs[currName];
       const currIconCssID = this._cardGlanceIconCssIDs[currName];
 
       let scaleCssID = 'units';
       if (currAttributeKey == Constants.RPI_TEMPERATURE_IN_C_KEY) {
-        scaleCssID = this.kClassIdTempScale;
+        scaleCssID = Constants.kClassIdTempScale;
       }
       columnsArray.push(html`
         <div class="attributes" tabindex="0">
