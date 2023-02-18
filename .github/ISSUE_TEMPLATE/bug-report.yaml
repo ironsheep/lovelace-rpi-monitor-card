@@ -7,9 +7,8 @@ body:
   - type: markdown
     attributes:
       value: |
-        ### Read this first:
-        - If you need additional help with this template please refer to https://www.home-assistant.io/help/reporting_issues/
-        - Make sure you are running the latest version of Home Assistant before reporting an issue: https://github.com/home-assistant/home-assistant/releases
+        #### Read this first
+        - Make sure you are running the latest version of RPi Monitor Card before reporting an issue: https://github.com/ironsheep/lovelace-rpi-monitor-card/releases
         - Provide as many details as possible. Do not delete any text from this template!
 
   - type: checkboxes
@@ -67,18 +66,18 @@ body:
       description: |
         Explain what the issue is, and how things should look/behave. If possible provide a screenshot with a description.
       placeholder: |
-        What problem are you seeing?
+        Please describe the issue you are experiencing.
 
   - type: textarea
     id: JavascriptErrors
     validations:
       required: false
     attributes:
-      label: Errors Seen
+      label: Errors in Browser Console
       description: |
-        Javascript errors shown in the web inspector (if applicable)
+        Javascript errors shown in the web inspector/developer tools console output (if applicable)
       placeholder: |
-        What problem are you seeing?
+        If you are seeing errors in the web browser console, please paste them here.
 
   - type: textarea
     id: additionalInfo
@@ -88,3 +87,7 @@ body:
       label: Additional information
       description: |
         Is there anything else that you think might help us identify the problem?
+
+  - type: markdown
+    attributes:
+      value: 'Thank you for taking the time to report this issue!'
