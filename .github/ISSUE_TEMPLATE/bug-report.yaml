@@ -9,11 +9,11 @@ body:
       value: |
         #### Read this first
         - Make sure you are running the latest version of RPi Monitor Card before reporting an issue: https://github.com/ironsheep/lovelace-rpi-monitor-card/releases
-        - Provide as many details as possible. Do not delete any text from this template!
+        - Provide as many details as possible.
 
   - type: checkboxes
     attributes:
-      label: Checklist
+      label: and have you...
       description: Have you accomplished the following before submitting this issue?
       options:
         - label: I updated to the latest version available
