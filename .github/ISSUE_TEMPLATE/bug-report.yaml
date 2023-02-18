@@ -1,0 +1,90 @@
+name: 🐛 Bug Report
+description: Report an issue you are experiencing with the RPi Monitor Card
+labels:
+  - bug
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ### Read this first:
+        - If you need additional help with this template please refer to https://www.home-assistant.io/help/reporting_issues/
+        - Make sure you are running the latest version of Home Assistant before reporting an issue: https://github.com/home-assistant/home-assistant/releases
+        - Provide as many details as possible. Do not delete any text from this template!
+
+  - type: checkboxes
+    attributes:
+      label: Checklist
+      description: Have you accomplished the following before submitting this issue?
+      options:
+        - label: I updated to the latest version available
+          required: true
+        - label: I cleared the cache of my browser
+          required: true
+
+  - type: input
+    id: affectedRelease
+    attributes:
+      label: Version of RPi Monitor Card
+      description: Please specify which version of RPi Monitor Card you are using, and if this is a regression, what is the last known version that worked?
+      placeholder: |
+        Failing in v1.3.3, last worked in v1.2.9
+    validations:
+      required: true
+
+  - type: dropdown
+    id: regression
+    validations:
+      required: true
+    attributes:
+      label: Is this a regression?
+      multiple: false
+      options:
+        - Yes. This used to work, but now it doesn't.
+        - No or unsure. This never worked, or I haven't tried before.
+
+  - type: textarea
+    id: environment
+    validations:
+      required: true
+    attributes:
+      label: Browser and Operating system
+      description: |
+        Provide details about what browser (and version) you are seeing the issue in. And also which operating system this is on. If possible try to replicate the issue in other browsers and include your findings here.
+      placeholder: |
+        Browser: Chrome 103.0.5060.53
+        OS: macOS 12.4
+      value: |
+        Browser:
+        OS:
+
+  - type: textarea
+    id: problem
+    validations:
+      required: true
+    attributes:
+      label: Description of problem
+      description: |
+        Explain what the issue is, and how things should look/behave. If possible provide a screenshot with a description.
+      placeholder: |
+        What problem are you seeing?
+
+  - type: textarea
+    id: JavascriptErrors
+    validations:
+      required: false
+    attributes:
+      label: Errors Seen
+      description: |
+        Javascript errors shown in the web inspector (if applicable)
+      placeholder: |
+        What problem are you seeing?
+
+  - type: textarea
+    id: additionalInfo
+    validations:
+      required: false
+    attributes:
+      label: Additional information
+      description: |
+        Is there anything else that you think might help us identify the problem?
