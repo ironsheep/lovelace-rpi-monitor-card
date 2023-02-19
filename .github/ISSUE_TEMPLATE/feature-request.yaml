@@ -40,10 +40,14 @@ body:
   - type: textarea
     id: additionalInfo
     validations:
-      required: true
+      required: false
     attributes:
       label: Additional information
       description: |
         Additional context.
       placeholder: |
-        Add any other context description or screenshots about the feature request here..
+        Add any other context description or screenshots about the feature request here...
+
+  - type: markdown
+    attributes:
+      value: Thank you for taking the time to request this enhancement! By doing so you are helping us make this card better for all of us.
