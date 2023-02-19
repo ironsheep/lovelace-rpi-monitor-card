@@ -1,0 +1,49 @@
+name: 🦄 Feature Request
+description: Suggest an idea for improving the RPi Monitor Card.
+labels:
+  - enhancement
+
+body:
+  - type: textarea
+    id: description
+    validations:
+      required: true
+    attributes:
+      label: Issue being Addressed
+      description: |
+        Is your feature request related to a problem? Please describe.
+      placeholder: |
+        A clear and concise description of what the problem is. Ex. I'm always frustrated when […]
+
+  - type: textarea
+    id: description
+    validations:
+      required: true
+    attributes:
+      label: Enhancement
+      description: |
+        Describe the solution you'd like.
+      placeholder: |
+        A clear and concise description of what you want to happen.
+
+  - type: textarea
+    id: description
+    validations:
+      required: true
+    attributes:
+      label: Alternatives
+      description: |
+        Describe alternatives you've considered.
+      placeholder: |
+        A clear and concise description of any alternative solutions or features you've considered.
+
+  - type: textarea
+    id: additionalInfo
+    validations:
+      required: true
+    attributes:
+      label: Additional information
+      description: |
+        Additional context.
+      placeholder: |
+        Add any other context description or screenshots about the feature request here..
