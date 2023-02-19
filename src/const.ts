@@ -1,4 +1,4 @@
-export const CARD_VERSION = '1.3.3';
+export const CARD_VERSION = '1.3.4';
 
 /*
 *  EXAMPLE attributes  ISP-RPi-mqtt-daemon.py v1.7.2
@@ -33,8 +33,8 @@ export const CARD_VERSION = '1.3.3';
       }
     },
     "memory": {
-      "size_mb": "1849.246",
-      "free_mb": "1508.148"
+      "size_mb": "1849",
+      "free_mb": "1508"
     },
     "cpu": {
       "hardware": "BCM2835",
@@ -70,18 +70,23 @@ export const kClassIconOS = 'ico-*nix';
 export const kClassIconRPiModel = 'ico-rpi-model';
 export const kClassIconInterfaces = 'ico-rpi-ifaces';
 export const kClassIconMemoryUsage = 'ico-memory-percent';
+
 // attribute value label IDs
-export const kClassIdFSAvail = 'fs-percent';
-export const kClassIdFSTotal = 'fs-total';
-export const kClassIdSysTemp = 'sys-temp';
-export const kClassIdUptime = 'up-time';
-export const kClassIdUpdated = 'last-update';
-export const kClassIdOS = '*nix';
-export const kClassIdRPiModel = 'rpi-model';
-export const kClassIdInterfaces = 'rpi-ifaces';
-export const kClassIdMemoryUsage = 'memory-percent';
-// ond one special for unit
-export const kClassIdTempScale = 'sys-temp-scale';
+export const kCSSClassIdFSAvail = 'fs-percent';
+export const kCSSClassIdFSTotal = 'fs-total';
+export const kCSSClassIdSysTemp = 'sys-temp';
+export const kCSSClassIdUptime = 'up-time';
+export const kCSSClassIdUpdated = 'last-update';
+export const kCSSClassIdOS = '*nix';
+export const kCSSClassIdRPiModel = 'rpi-model';
+export const kCSSClassIdInterfaces = 'rpi-ifaces';
+export const kCSSClassIdMemoryUsage = 'memory-percent';
+// and one special for unit
+export const kCSSClassIdTempScale = 'sys-temp-scale';
+// and for new RPi health checks
+export const kCSSClassIdCardAge = 'card-timestamp';
+export const kCSSClassIdDaemonUpd = 'daemon-upd-flg';
+export const kCSSClassIdOSName = 'os-rls-name';
 
 export const RPI_TOP_KEY = 'info';
 
@@ -95,7 +100,8 @@ export const RPI_NIX_VERSION_KEY = 'ux_version';
 export const RPI_LAST_UPDATE_KEY = 'last_update';
 export const RPI_UP_TIME_KEY = 'up_time';
 export const RPI_FS_TOTAL_GB_KEY = 'fs_total_gb';
-export const RPI_FS_USED_PERCENT_KEY = 'fs_free_prcnt';
+export const RPI_FS_FREE_PERCENT_KEY = 'fs_free_prcnt';
+export const RPI_FS_USED_PERCENT_KEY = 'fs_used_prcnt';
 export const RPI_NETWORKING_KEY = 'networking';
 export const RPI_TEMPERATURE_IN_C_KEY = 'temperature_c';
 export const RPI_SCRIPT_VER_KEY = 'reporter';
@@ -103,6 +109,11 @@ export const RPI_SCRIPT_RELEASE_LIST = 'reporter_releases';
 export const RPI_SCRIPT_INTERVAL_KEY = 'report_interval';
 
 export const SHOW_OS_PARTS_VALUE = 'show-os-parts';
+
+export const RPI_MEMORY = 'memory';
+export const RPI_MEM_SIZE_MB = 'size_mb';
+export const RPI_MEM_FREE_MB = 'free_mb';
+export const RPI_MEM_USED_PRCNT = 'mem_used_prcnt';
 
 export const RPI_IP_NTWK_KEY = 'IP';
 export const RPI_MAC_NTWK_KEY = 'mac';
