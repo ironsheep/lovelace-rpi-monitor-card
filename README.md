@@ -16,7 +16,7 @@ If you have a number of Raspberry Pis on your network then this might be the car
 
 This is a Lovelace card showing you the status of one of the Raspberry Pi's on your network. This card offers a choice of smaller 'glance' style card or the larger 'full' card. You choose which you'd like for each of your RPi's.
 
-![Actual Card Layouts](./DOCs/images/LiveCardsV2.png)
+![Actual Card Layouts](./DOCs/images/liveCardsV2.png)
 
 Place one of these cards for each of your RPi's on your network (and install the sensor/daemon script on each RPi) and you can monitor your entire constellation of RPi's "at a glance"!
 
