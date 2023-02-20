@@ -16,10 +16,21 @@ If you have a number of Raspberry Pis on your network then this might be the car
 
 This is a Lovelace card showing you the status of one of the Raspberry Pi's on your network. This card offers a choice of smaller 'glance' style card or the larger 'full' card. You choose which you'd like for each of your RPi's.
 
-![Actual Card Layouts](./DOCs/images/LiveCards.png)
+![Actual Card Layouts](./DOCs/images/LiveCardsV2.png)
 
 Place one of these cards for each of your RPi's on your network (and install the sensor/daemon script on each RPi) and you can monitor your entire constellation of RPi's "at a glance"!
 
+### RPi Health Indicators
+
+All of the card forms (as seen above) now have a row of RPi health indicators. With these indicators you can tell:
+
+- If the RPi OS has reached [end of support](https://en.wikipedia.org/wiki/Debian_version_history) (no longer getting security updates) so it probably should be updated
+- If a new version of the RPi reporter Daemon is avaialble for install
+- When the data shown on the card was last updated
+
+<p align="center">
+  <img src="./DOCs/images/newIndicators.png" width="500">
+</p>
 ---
 
 If you like my work and/or this has helped you in some way then feel free to help me out for a couple of :coffee:'s or :pizza: slices!
