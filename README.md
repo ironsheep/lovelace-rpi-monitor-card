@@ -127,7 +127,7 @@ The Daemon update needed flag is colored according to version being run vs. the 
 
 ### Example card specifications
 
-**NOTE**: this card must always be attached to the 'sensor.rpi*monitor*{hostname}' sensor, **the other two sensors from the same RPi will not work to drive this card!**
+**NOTE**: this card must always be attached to the 'sensor.rpi*monitor*{hostname}' sensor, **the other sensors from the same RPi will not work to drive this card!**
 
 A 'glance' card example
 
@@ -156,6 +156,32 @@ fs_severity:
     from: 51
     to: 100
 ```
+
+### Example monitoring of specific attributes
+
+While we have the **Glance** and **Full** layout cards, you may wish to monitor other values. Here's an example of monitoring the RPi CPU Throttling that can occur or viewing the active network interfaces.  Add the sensor(s) as follows:
+
+```yaml
+ - type: attribute
+    entity: sensor.rpi_monitor_hostname
+    attribute: throttle
+    name: Throttle status
+```
+
+or...
+
+```yaml
+ - type: attribute
+    entity: sensor.rpi_monitor_hostname
+    attribute: networking
+    name: Network
+```
+
+This shows the sensor add and the resultant output:
+
+![Actual Card Layouts](./DOCs/images/weather-example.png)
+
+(*Thanks to gihub user @bsimmo for provinding this example.*)
 
 ## Credits
 
