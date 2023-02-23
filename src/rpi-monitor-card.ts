@@ -57,7 +57,7 @@ export class RPiMonitorCard extends LitElement {
 
   @state() private _config!: RPiMonitorCardConfig;
 
-  @state() private _cardMinutesSinceUpdate: number = 0;
+  private kREPLACE_WITH_TEMP_UNITS: string = 'replace-with-temp-units';
 
   // and those that don't cause a re-render
   private _firstTime: boolean = true;
@@ -67,9 +67,11 @@ export class RPiMonitorCard extends LitElement {
   private _hostname: string = '';
   private _showFullCard: boolean = true;
   private _useTempsInC: boolean = true;
-  private kREPLACE_WITH_TEMP_UNITS: string = 'replace-with-temp-units';
-  private latestDaemonVersions: string[] = ['v1.7.4', 'v1.6.1']; // REMOVE BEFORE FLIGHT (TEST DATA)
-  private currentDaemonVersion: string = '';
+  private _latestDaemonVersions: string[] = ['v1.7.4', 'v1.6.1']; // REMOVE BEFORE FLIGHT (TEST DATA)
+  private _currentDaemonVersion: string = '';
+  private _cardMinutesSinceUpdate: number = 0;
+  private _defaultTextColor: string = '';
+  private _defaultIconColor: string = '';
 
   // OS Age is shown (default = True) unless turned off
   private _showOsAge: boolean = true;
@@ -272,6 +274,7 @@ export class RPiMonitorCard extends LitElement {
     // Called to determine whether an update cycle is required.
     // https://lit.dev/docs/components/lifecycle/#reactive-update-cycle-performing
     // if we don't yet know our hostname, then get it
+    let bForcedUpdate = false;
 
     this._ensureStateInfoAvail();
 
@@ -302,17 +305,11 @@ export class RPiMonitorCard extends LitElement {
         console.log(' - SU config present');
       }
       bShouldStatus = true;
-    } else if (changedProps.has('_cardMinutesSinceUpdate')) {
-      if (this._showDebug) {
-        console.log(' - SU card last updated changed');
-      }
-      bShouldStatus = true;
     } else if (this.hass && this._config && changedProps.has('hass')) {
       const oldHass = changedProps.get('hass') as HomeAssistant;
 
       if (oldHass && this._configEntityId) {
         bShouldStatus = oldHass.states[this._configEntityId] !== this.hass.states[this._configEntityId];
-        // XYZZY
         if (bShouldStatus) {
           if (this._showDebug) {
             console.log(' - SU hass state changed');
@@ -320,9 +317,14 @@ export class RPiMonitorCard extends LitElement {
         } else {
           if (this._showDebug) {
             console.log(' - SU !! NO hass state change');
+            // don't force until we have underlying data
+          }
+          const backingState = this.hass.states[this._configEntityId];
+          if (backingState && backingState.state != 'unknown') {
+            bForcedUpdate = true;
+            bShouldStatus = true;
           }
         }
-        //
       }
     }
     /*
@@ -334,7 +336,8 @@ export class RPiMonitorCard extends LitElement {
     */
 
     if (this._showDebug) {
-      console.log('\\---- shouldUpdate(' + this._hostname + ') - EXIT w/' + bShouldStatus);
+      const forcedStr = bForcedUpdate ? ' FORCED' : '';
+      console.log('\\---- shouldUpdate(' + this._hostname + ') - EXIT w/' + bShouldStatus + forcedStr);
     }
     return bShouldStatus;
   }
@@ -388,15 +391,13 @@ export class RPiMonitorCard extends LitElement {
 
     if (this._firstTime) {
       if (this._showDebug) {
-        console.log('- stateObj: [' + stateObj + ']');
+        console.log('- 1st-time [' + this._configEntityId + '] stateObj:');
+        console.log(stateObj);
       }
 
-      // set timer so our card updates timestamp every 5 seconds : 5000 (1 second: 1000)
-      // remember to clear this interval when entity NOT avail. and restore when comes avail again...
-      this._startCardRefreshTimer();
-
       if (this._showDebug) {
-        console.log('- 1st-time _config: [' + this._config + ']');
+        console.log('- 1st-time [' + this._configEntityId + '] _config:');
+        console.log(this._config);
       }
       this._firstTime = false;
     }
@@ -405,24 +406,26 @@ export class RPiMonitorCard extends LitElement {
       // get Daemon current version
       const reporter_version: string = this._getAttributeValueForKey(Constants.RPI_SCRIPT_VER_KEY);
       const reportParts: string[] = reporter_version.split(' ');
-      this.currentDaemonVersion = reportParts.length > 1 ? reportParts[1] : '';
-      //console.log('- 1st-time currentDaemonVersion=[' + this.currentDaemonVersion + ']');
+      this._currentDaemonVersion = reportParts.length > 1 ? reportParts[1] : '';
+      //console.log('- 1st-time _currentDaemonVersion=[' + this._currentDaemonVersion + ']');
 
       // get version list from Daemon (if provided)
       const reporter_version_set: string = this._getAttributeValueForKey(Constants.RPI_SCRIPT_RELEASE_LIST);
       if (reporter_version_set && reporter_version_set.length > 0 && reporter_version_set != 'NOT-LOADED') {
         // parse set into list of versions then replace our built-in set
         const newVersions: string[] = reporter_version_set.split(',');
-        this.latestDaemonVersions = newVersions;
+        this._latestDaemonVersions = newVersions;
       }
     }
 
     const rpi_fqdn: string = this._getAttributeValueForKey(Constants.RPI_FQDN_KEY);
     const ux_release: string = this._showOsAge == true ? this._getAttributeValueForKey(Constants.RPI_NIX_RELEASE_KEY) : '';
 
-    const daemon_update_status: string = this._showDaemonUpdNeed ? this._computeDaemonUpdMessage(this.currentDaemonVersion) : '';
+    const daemon_update_status: string = this._showDaemonUpdNeed ? this._computeDaemonUpdMessage(this._currentDaemonVersion) : '';
+
     let cardUpdateString: string = '';
     if (this._showCardAge) {
+      this._cardMinutesSinceUpdate = this._calculateRelativeMinutesSinceUpdate();
       if (this._cardMinutesSinceUpdate == 0) {
         cardUpdateString = 'just now';
       } else {
@@ -430,6 +433,7 @@ export class RPiMonitorCard extends LitElement {
         cardUpdateString = this._cardMinutesSinceUpdate + ' min' + suffix + ' ago';
       }
     }
+
     const card_timestamp: string = this._showCardAge == true ? cardUpdateString : '';
     //const card_timestamp: string = '{bad value}';
 
@@ -537,10 +541,6 @@ export class RPiMonitorCard extends LitElement {
       }
 
       this._ensureStateInfoAvail();
-      if (!this._stateInfoAvailable) {
-        // if we lost our state information, then stop our card timer...
-        this._stopCardRefreshTimer();
-      }
 
       //console.log('- changed Props: [' + changedProps + ']');
 
@@ -548,34 +548,36 @@ export class RPiMonitorCard extends LitElement {
       const root: any = this.shadowRoot;
 
       if (this._stateInfoAvailable) {
-        if (changedProps.get('_cardMinutesSinceUpdate') != undefined) {
-          // now apply card age color if our entry is OLD
-          const intervalColor = this.colorHelpers.calculateReporterAgeColor(this._cardMinutesSinceUpdate);
-          if (intervalColor != '') {
-            const labelElement = root.getElementById(Constants.kCSSClassIdCardAge);
-            if (labelElement) {
-              labelElement.style.setProperty('color', intervalColor);
-            }
+        // now apply card age color if our entry is OLD
+        let intervalColor = this.colorHelpers.calculateReporterAgeColor(this._cardMinutesSinceUpdate);
+        const labelElement = root.getElementById(Constants.kCSSClassIdCardAge);
+        if (labelElement) {
+          if (intervalColor == '') {
+            intervalColor = this._getDefaultTextColor(labelElement);
           }
+          labelElement.style.setProperty('color', intervalColor);
         }
+
         if (changedProps.has('hass')) {
           // update common label(s)
           const ux_release: string = this._getAttributeValueForKey(Constants.RPI_NIX_RELEASE_KEY);
-          const rlsNameColor = this.colorHelpers.calculateOsReleaseColor(ux_release, this._config.os_age);
-          if (rlsNameColor != '') {
-            const labelElement = root.getElementById(Constants.kCSSClassIdOSName);
-            if (labelElement) {
-              labelElement.style.setProperty('color', rlsNameColor);
+          let rlsNameColor = this.colorHelpers.calculateOsReleaseColor(ux_release, this._config.os_age);
+          let labelElement = root.getElementById(Constants.kCSSClassIdOSName);
+          if (labelElement) {
+            if (intervalColor == '') {
+              rlsNameColor = this._getDefaultTextColor(labelElement);
             }
+            labelElement.style.setProperty('color', rlsNameColor);
           }
 
           // apply color if RPi daemon should be updated
-          const daemonUpdColor = this.colorHelpers.calculateDaemonUpdateVersionColor(this.currentDaemonVersion, this.latestDaemonVersions);
-          if (daemonUpdColor != '') {
-            const labelElement = root.getElementById(Constants.kCSSClassIdDaemonUpd);
-            if (labelElement) {
-              labelElement.style.setProperty('color', daemonUpdColor);
+          let daemonUpdColor = this.colorHelpers.calculateDaemonUpdateVersionColor(this._currentDaemonVersion, this._latestDaemonVersions);
+          labelElement = root.getElementById(Constants.kCSSClassIdDaemonUpd);
+          if (labelElement) {
+            if (intervalColor == '') {
+              daemonUpdColor = this._getDefaultTextColor(labelElement);
             }
+            labelElement.style.setProperty('color', daemonUpdColor);
           }
 
           if (this._showFullCard) {
@@ -589,30 +591,26 @@ export class RPiMonitorCard extends LitElement {
               //            console.log('- FULL memory latestValue=[' + latestValue + ']');
               //          }
               const labelElement = root.getElementById(currLabelID);
-              labelElement.textContent = latestValue;
               const currIconCssID = this._cardFullIconCssIDs[currName];
               const iconElement = root.getElementById(currIconCssID);
               if (labelElement && iconElement) {
+                //labelElement.textContent = latestValue;   // CAUSES lit/lit-html BUG
+                const defaultTextColor = this._getDefaultTextColor(labelElement);
+                const defaultIconColor = this._getDefaultIconColor(iconElement);
                 if (currAttrKey == Constants.RPI_FS_USED_PERCENT_KEY) {
-                  const color = this.colorHelpers.calculateFileSystemUsageColor(rawValue, this._config.fs_severity);
-                  if (color != '') {
-                    labelElement.style.setProperty('color', color);
-                    iconElement.style.setProperty('color', color);
-                  }
+                  const stateColor = this.colorHelpers.calculateFileSystemUsageColor(rawValue, this._config.fs_severity);
+                  labelElement.style.setProperty('color', stateColor != '' ? stateColor : defaultTextColor);
+                  iconElement.style.setProperty('color', stateColor != '' ? stateColor : defaultIconColor);
                 }
                 if (currAttrKey == Constants.RPI_MEMORY_USED_PERCENT_KEY) {
-                  const color = this.colorHelpers.calculateMemoryUsageColor(latestValue.replace(' %', ''), this._config.memory_severity);
-                  if (color != '') {
-                    labelElement.style.setProperty('color', color);
-                    iconElement.style.setProperty('color', color);
-                  }
+                  const stateColor = this.colorHelpers.calculateMemoryUsageColor(latestValue.replace(' %', ''), this._config.memory_severity);
+                  labelElement.style.setProperty('color', stateColor != '' ? stateColor : defaultTextColor);
+                  iconElement.style.setProperty('color', stateColor != '' ? stateColor : defaultIconColor);
                 }
                 if (currAttrKey == Constants.RPI_TEMPERATURE_IN_C_KEY) {
-                  const color = this.colorHelpers.calculateTemperatureColor(rawValue, this._config.temp_severity);
-                  if (color != '') {
-                    labelElement.style.setProperty('color', color);
-                    iconElement.style.setProperty('color', color);
-                  }
+                  const stateColor = this.colorHelpers.calculateTemperatureColor(rawValue, this._config.temp_severity);
+                  labelElement.style.setProperty('color', stateColor != '' ? stateColor : defaultTextColor);
+                  iconElement.style.setProperty('color', stateColor != '' ? stateColor : defaultIconColor);
                 }
               }
             }
@@ -627,32 +625,28 @@ export class RPiMonitorCard extends LitElement {
               //            console.log('- GLNC memory latestValue=[' + latestValue + ']');
               //          }
               const labelElement = root.getElementById(currLabelID);
-              labelElement.textContent = latestValue;
               const currIconCssID = this._cardGlanceIconCssIDs[currName];
               const iconElement = root.getElementById(currIconCssID);
               if (labelElement && iconElement) {
+                //labelElement.textContent = latestValue;
+                const defaultTextColor = this._getDefaultTextColor(labelElement);
+                const defaultIconColor = this._getDefaultIconColor(iconElement);
                 if (currAttrKey == Constants.RPI_FS_USED_PERCENT_KEY) {
-                  const color = this.colorHelpers.calculateFileSystemUsageColor(rawValue, this._config.fs_severity);
-                  if (color != '') {
-                    labelElement.style.setProperty('color', color);
-                    iconElement.style.setProperty('color', color);
-                  }
+                  const stateColor = this.colorHelpers.calculateFileSystemUsageColor(rawValue, this._config.fs_severity);
+                  labelElement.style.setProperty('color', stateColor != '' ? stateColor : defaultTextColor);
+                  iconElement.style.setProperty('color', stateColor != '' ? stateColor : defaultIconColor);
                 }
                 if (currAttrKey == Constants.RPI_MEMORY_USED_PERCENT_KEY) {
-                  const color = this.colorHelpers.calculateMemoryUsageColor(latestValue, this._config.memory_severity);
-                  if (color != '') {
-                    labelElement.style.setProperty('color', color);
-                    iconElement.style.setProperty('color', color);
-                  }
+                  const stateColor = this.colorHelpers.calculateMemoryUsageColor(latestValue, this._config.memory_severity);
+                  labelElement.style.setProperty('color', stateColor != '' ? stateColor : defaultTextColor);
+                  iconElement.style.setProperty('color', stateColor != '' ? stateColor : defaultIconColor);
                 }
                 if (currAttrKey == Constants.RPI_TEMPERATURE_IN_C_KEY) {
                   // don't place temp scale (C or F) when 'n/a'
                   if (latestValue != 'n/a') {
-                    const color = this.colorHelpers.calculateTemperatureColor(rawValue, this._config.temp_severity);
-                    if (color != '') {
-                      labelElement.style.setProperty('color', color);
-                      iconElement.style.setProperty('color', color);
-                    }
+                    const stateColor = this.colorHelpers.calculateTemperatureColor(rawValue, this._config.temp_severity);
+                    labelElement.style.setProperty('color', stateColor != '' ? stateColor : defaultTextColor);
+                    iconElement.style.setProperty('color', stateColor != '' ? stateColor : defaultIconColor);
                     const scaleLabelElement = root.getElementById(Constants.kCSSClassIdTempScale);
                     if (scaleLabelElement) {
                       scaleLabelElement.textContent = this._getTemperatureScale();
@@ -666,6 +660,24 @@ export class RPiMonitorCard extends LitElement {
       }
     }
     //console.log('\\---- updated(' + this._hostname + ') - EXIT');
+  }
+
+  private _getDefaultTextColor(labelElement): string {
+    let desiredColor: string = this._defaultTextColor;
+    if (desiredColor.length == 0) {
+      this._defaultTextColor = getComputedStyle(labelElement).getPropertyValue('--primary-text-color');
+      desiredColor = this._defaultTextColor;
+    }
+    return desiredColor;
+  }
+
+  private _getDefaultIconColor(iconElement): string {
+    let desiredColor: string = this._defaultIconColor;
+    if (desiredColor.length == 0) {
+      this._defaultIconColor = getComputedStyle(iconElement).getPropertyValue('--paper-item-icon-color');
+      desiredColor = this._defaultIconColor;
+    }
+    return desiredColor;
   }
 
   private _handleAction(ev: ActionHandlerEvent): void {
@@ -695,37 +707,6 @@ export class RPiMonitorCard extends LitElement {
   //  PRIVATE (utility) functions
   // ---------------------------------------------------------------------------
 
-  private _startCardRefreshTimer(): void {
-    // set timer to refresh every 15 seconds
-    this._updateTimerID = setInterval(() => this._handleCardUpdateTimerExpiration(), 15 * 1000);
-    if (this._showDebug) {
-      console.log('TIMER: (' + this._hostname + ') started');
-    }
-  }
-
-  private _stopCardRefreshTimer(): void {
-    if (this._updateTimerID != undefined) {
-      clearInterval(this._updateTimerID);
-      this._updateTimerID = undefined;
-      if (this._showDebug) {
-        console.log('TIMER: (' + this._hostname + ') STOPPED');
-      }
-    }
-  }
-
-  private _handleCardUpdateTimerExpiration(): void {
-    //
-    //  timestamp portion of card
-    //
-    //console.log('TIMER: (' + this._hostname + ') timeout ENTRY');
-    const sinceMinutes = this._calculateRelativeMinutesSinceUpdate();
-    // set properties which should cause our card update
-    if (this._cardMinutesSinceUpdate != sinceMinutes) {
-      this._cardMinutesSinceUpdate = sinceMinutes;
-    }
-    //console.log('TIMER: (' + this._hostname + ') timeout EXIT');
-  }
-
   private _debugShowProps(changedProps: PropertyValues, message: string): void {
     if (this._showDebug) {
       console.log('/ ---- ' + message + ' ' + this._hostname + ' ---- :');
@@ -737,13 +718,9 @@ export class RPiMonitorCard extends LitElement {
     // keep our global status up-to-date
     if (this._configEntityId && this.hass) {
       const backingState = this._configEntityId ? this.hass.states[this._configEntityId] : undefined;
-      if (backingState) {
-        // um, yeah, we have to go one step further so empty card with bad values doesn't display
-        if (backingState.state == 'unavailable') {
-          this._stateInfoAvailable = false; // well, not quite yet
-        } else {
-          this._stateInfoAvailable = true; // yep!!
-        }
+      // um, yeah, we have to go one step further so empty card with bad values doesn't display
+      if (backingState && backingState.state != 'unavailable' && backingState.state != 'unknown') {
+        this._stateInfoAvailable = true; // yep!!
       } else {
         this._stateInfoAvailable = false; // well, not quite yet
       }
@@ -764,26 +741,28 @@ export class RPiMonitorCard extends LitElement {
 
   private _computeDaemonUpdMessage(currentReporterVersion: string): string {
     let updateStatusMessage: string = '';
+    /*
     if (this._showDebug) {
-      console.log('- RNDR currentDaemonVersion=[' + currentReporterVersion + ']');
-      console.log('- RNDR latestDaemonVersions=[' + this.latestDaemonVersions + ']');
+      console.log('- RNDR _currentDaemonVersion=[' + currentReporterVersion + ']');
+      console.log('- RNDR _latestDaemonVersions=[' + this._latestDaemonVersions + ']');
     }
-    if (this.latestDaemonVersions.length > 0 && currentReporterVersion != '') {
-      if (currentReporterVersion < this.latestDaemonVersions[0]) {
+    */
+    if (this._latestDaemonVersions.length > 0 && currentReporterVersion != '') {
+      if (currentReporterVersion < this._latestDaemonVersions[0]) {
         // test code
         /*
-        if (currentReporterVersion > this.latestDaemonVersions[0]) {
-          console.log(currentReporterVersion + ' is > than ' + this.latestDaemonVersions[0]);
+        if (currentReporterVersion > this._latestDaemonVersions[0]) {
+          console.log(currentReporterVersion + ' is > than ' + this._latestDaemonVersions[0]);
         } else {
-          console.log(currentReporterVersion + ' is < than ' + this.latestDaemonVersions[0]);
+          console.log(currentReporterVersion + ' is < than ' + this._latestDaemonVersions[0]);
         }
         */
         // test code
         // reporter version is not latest
-        updateStatusMessage = currentReporterVersion + ' ---> ' + this.latestDaemonVersions[0];
+        updateStatusMessage = currentReporterVersion + ' ---> ' + this._latestDaemonVersions[0];
       }
     } else {
-      if (this.currentDaemonVersion != '') {
+      if (this._currentDaemonVersion != '') {
         updateStatusMessage = '{no info avail.}';
       } else {
         updateStatusMessage = 'v?.?.? {no info avail.}';
@@ -793,11 +772,11 @@ export class RPiMonitorCard extends LitElement {
   }
 
   private _calculateRelativeMinutesSinceUpdate(): number {
-    let desiredMinutes: number = 0;
+    let desiredMinutes: number = -1;
     const backingState = this._configEntityId ? this.hass.states[this._configEntityId] : undefined;
     // publish so we don't check this again
     this._stateInfoAvailable = backingState ? true : false;
-    if (backingState) {
+    if (backingState && backingState.state != 'unknown') {
       const stateTime: string = backingState.state;
       //console.log('state:' + stateTime + ', chg:' + stateLastChangedTime + ', upd:' + stateLastUpdatedTime);
       const stateDate: Date = new Date(stateTime);
@@ -1072,13 +1051,13 @@ export class RPiMonitorCard extends LitElement {
 
   private _getUIDateForTimestamp(dateISO: string): string {
     //const uiDateOptions = new DateTimeFormatOptions({
-    //    locale:  'en-us',
+    //    locale:  'en-us',  // don't force this USE OWNERs locale!
     //    year:  'numeric',
     //    month: 'short',
     //    day:   'numeric',
     //});
     const timestamp = new Date(dateISO);
-    const desiredInterp = timestamp.toLocaleDateString('en-us');
+    const desiredInterp = timestamp.toLocaleDateString();
     return desiredInterp;
   }
 

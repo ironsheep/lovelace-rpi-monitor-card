@@ -1,4 +1,4 @@
-export const CARD_VERSION = '1.3.4';
+export const CARD_VERSION = '1.4.0';
 
 /*
 *  EXAMPLE attributes  ISP-RPi-mqtt-daemon.py v1.7.2

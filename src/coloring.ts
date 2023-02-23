@@ -161,6 +161,9 @@ export class ColorUtils {
     });
 
     if (color == undefined || color == 'default') color = '';
+    if (this._showColorDebug) {
+      console.log('- ReporterAge() value=(' + numberValue + ') -> color [' + color + ']');
+    }
     return color;
   }
 
