@@ -31,6 +31,7 @@ All of the card forms (as seen above) now have a row of RPi health indicators. W
 <p align="center">
   <img src="./DOCs/images/newIndicators.png" width="500">
 </p>
+
 ---
 
 If you like my work and/or this has helped you in some way then feel free to help me out for a couple of :coffee:'s or :pizza: slices!
@@ -67,10 +68,11 @@ If you don't use HACS please change the url accordingly.
 | temp_severity   | object  | none               | A list of severity values. See [Severity Coloring](#severity-coloring).               |
 | memory_severity | object  | none               | A list of severity values. See [Severity Coloring](#severity-coloring).               |
 | os_age          | object  | none               | A list of os name and color values. See [OS Coloring](#os-coloring).                  |
-| show_title      | boolean | true               | Show / hide the Title for this card. (Default is show - 'true')                       |
-| show_os_age     | boolean | true               | Show / hide the os release name (Default is show - 'true')                            |
-| show_update_age | boolean | true               | Show / hide time since last values reported for this card. (Default is show - 'true') |
-| show_daemon_upd | boolean | true               | Show / hide Daemon update needed flag. (Default is show - 'true')                     |
+| show\_title      | boolean | true               | Show / hide the Title for this card. (Default is show - 'true')                       |
+| show\_os_age     | boolean | true               | Show / hide the os release name (Default is show - 'true')                            |
+| show\_update_age | boolean | true               | Show / hide time since last values reported for this card. (Default is show - 'true') |
+| show\_daemon_upd | boolean | true               | Show / hide Daemon update needed flag. (Default is show - 'true')                     |
+
 
 ### Threashold Monitoring
 
@@ -104,6 +106,7 @@ The default release coloring is
 | red             | jessie  | 30 June 2020 |
 | red             | stretch | 30 June 2022 |
 
+
 **NOTE:** The release colors are based on when the named released reaches [end of support](https://en.wikipedia.org/wiki/Debian_version_history) When a release reaches end of support we no longer get security updates. It is best to simply move to the current release (or last release supporting your RPi version) when this happens. These color flags on the OS release let us know when we should be thinking about building a new OS image for the affected RPi.
 
 ### RPi Daemon update available coloring
@@ -118,12 +121,14 @@ The Daemon update needed flag is colored according to version being run vs. the 
 | to    | number | **Required** | Defines to which value the color should be displayed.   |
 | color | string | **Required** | Defines the color to be displayed.                      |
 
+
 ### OS Coloring
 
 | Name  | Type   | Default      | Description                                                                         |
 | ----- | ------ | ------------ | ----------------------------------------------------------------------------------- |
 | os    | string | **Required** | Defines for which named release this color is displayed (e.g., 'buster', 'stretch') |
 | color | string | **Required** | Defines the color to be displayed.                                                  |
+
 
 ### Example card specifications
 
@@ -182,6 +187,31 @@ This shows the sensor add and the resultant output:
 ![Actual Card Layouts](./DOCs/images/weather-example.png)
 
 (*Thanks to gihub user @bsimmo for provinding this example.*)
+
+
+### Example control of your RPi (avail. in Daemon v1.8.0 and later)
+
+From v1.8.0 and later of the RPi Reporter MQTT2HA Daemon we can enable control over our RPi.
+We can then expose buttons offering this control with something like:
+
+```yaml
+  - type: entities
+    entities:
+      - entity: button.rpi_command_pip2iotgw_reboot
+        name: Reboot pip2iotgw
+      - entity: button.rpi_command_pip2iotgw_restart_service 
+        name: Restart Service pip2iotgw
+      - entity: button.rpi_command_pip2iotgw_shutdown
+        name: Shutdown pip2iotgw
+    title: RPi-pip2iotgw.home
+```
+
+This presents an interface like:
+<p align="center">
+  <img src="./DOCs/images/button-example.png" width="500">
+</p>
+
+
 
 ## Credits
 
