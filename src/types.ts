@@ -17,6 +17,7 @@ declare global {
 | card_style    | string       | 'glance' or 'full' | Card layout desired for this RPi. (Default is Full)                   |
 | temp_scale    | string       | 'C' or 'F'         | Show Temperature in Celsius (C) or Fahrenheit (F). (Default is C)     |
 | fs_severity   | ColorRange[] | none               | A list of severity values. See [Severity Options](#severity-options). |
+| os_update_severity | ColorRange[] | none          | A list of count values. See [Severity Options](#severity-options). |
 | temp_severity | ColorRange[] | none               | A list of severity values. See [Severity Options](#severity-options). |
 | memory_severity | ColorRange[] | none             | A list of severity values. See [Severity Options](#severity-options). |
 | os_age        | OsColor[]    | none               | A list of os release names with color values.                         |
@@ -41,6 +42,7 @@ export interface RPiMonitorCardConfig extends LovelaceCardConfig {
   temp_severity?: ColorRange[];
   temp_scale?: string;
   memory_severity?: ColorRange[];
+  os_update_severity?: ColorRange[];
   os_age?: OsColor[];
   name_prefix?: string;
   // following are on by default:  set to false to disable
@@ -48,6 +50,7 @@ export interface RPiMonitorCardConfig extends LovelaceCardConfig {
   show_os_age?: boolean;
   show_update_age?: boolean;
   show_daemon_upd?: boolean;
+  show_os_upd_count?: boolean;
 
   show_warning?: boolean;
   show_error?: boolean;

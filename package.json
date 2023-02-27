@@ -1,6 +1,6 @@
 {
   "name": "rpi-monitor-card",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "Lovelace RPi Monitor Card",
   "keywords": [
     "home-assistant",

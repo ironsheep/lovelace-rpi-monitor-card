@@ -1,4 +1,4 @@
-export const CARD_VERSION = '1.4.0';
+export const CARD_VERSION = '1.4.1';
 
 /*
 *  EXAMPLE attributes  ISP-RPi-mqtt-daemon.py v1.7.2
@@ -87,6 +87,7 @@ export const kCSSClassIdTempScale = 'sys-temp-scale';
 export const kCSSClassIdCardAge = 'card-timestamp';
 export const kCSSClassIdDaemonUpd = 'daemon-upd-flg';
 export const kCSSClassIdOSName = 'os-rls-name';
+export const kCSSClassIdUpdCount = 'os-upd-count';
 
 export const RPI_TOP_KEY = 'info';
 
@@ -107,6 +108,7 @@ export const RPI_TEMPERATURE_IN_C_KEY = 'temperature_c';
 export const RPI_SCRIPT_VER_KEY = 'reporter';
 export const RPI_SCRIPT_RELEASE_LIST = 'reporter_releases';
 export const RPI_SCRIPT_INTERVAL_KEY = 'report_interval';
+export const RPI_OS_UPD_CT_KEY = 'ux_updates';
 
 export const SHOW_OS_PARTS_VALUE = 'show-os-parts';
 

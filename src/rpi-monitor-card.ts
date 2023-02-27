@@ -67,11 +67,13 @@ export class RPiMonitorCard extends LitElement {
   private _hostname: string = '';
   private _showFullCard: boolean = true;
   private _useTempsInC: boolean = true;
-  private _latestDaemonVersions: string[] = ['v1.7.4', 'v1.6.1']; // REMOVE BEFORE FLIGHT (TEST DATA)
+  private _latestDaemonVersions: string[] = ['v1.8.1', 'v1.6.1']; // REMOVE BEFORE FLIGHT (TEST DATA)
   private _currentDaemonVersion: string = '';
   private _cardMinutesSinceUpdate: number = 0;
   private _defaultTextColor: string = '';
   private _defaultIconColor: string = '';
+  private _ux_release_name: string = '';
+  private _os_update_count: string = '';
 
   // OS Age is shown (default = True) unless turned off
   private _showOsAge: boolean = true;
@@ -79,6 +81,7 @@ export class RPiMonitorCard extends LitElement {
   private _showCardAge: boolean = true;
   private _showDaemonUpdNeed: boolean = true;
   private _showCardName: boolean = true;
+  private _showOsUpCt: boolean = true;
 
   // WARNING set following to false before commit!
   private _showDebug: boolean = false; // REMOVE BEFORE FLIGHT (!set to false before check-in!)
@@ -248,6 +251,7 @@ export class RPiMonitorCard extends LitElement {
     this._showCardAge = this._config.show_update_age != undefined ? this._config.show_update_age : true;
     this._showDaemonUpdNeed = this._config.show_daemon_upd != undefined ? this._config.show_daemon_upd : true;
     this._showCardName = this._config.show_title != undefined ? this._config.show_title : true;
+    this._showOsUpCt = this._config.show_os_upd_count != undefined ? this._config.show_os_upd_count : true;
     /*
     console.log(
       '- showCardName=[' +
@@ -419,9 +423,11 @@ export class RPiMonitorCard extends LitElement {
     }
 
     const rpi_fqdn: string = this._getAttributeValueForKey(Constants.RPI_FQDN_KEY);
-    const ux_release: string = this._showOsAge == true ? this._getAttributeValueForKey(Constants.RPI_NIX_RELEASE_KEY) : '';
+    this._os_update_count = this._getAttributeValueForKey(Constants.RPI_OS_UPD_CT_KEY);
+    this._ux_release_name = this._showOsAge == true ? this._getAttributeValueForKey(Constants.RPI_NIX_RELEASE_KEY) : '';
 
     const daemon_update_status: string = this._showDaemonUpdNeed ? this._computeDaemonUpdMessage(this._currentDaemonVersion) : '';
+    const os_update_ct_status: string = this._showOsUpCt ? this._computeOsUpdCountMessage(this._os_update_count) : '';
 
     let cardUpdateString: string = '';
     if (this._showCardAge) {
@@ -454,6 +460,9 @@ export class RPiMonitorCard extends LitElement {
     const daemon_update_full_class = (this._showCardName == false ? 'daemon-update-full-notitle' : 'daemon-update-full') + ' center';
     const daemon_update_class = (this._showCardName == false ? 'daemon-update-notitle' : 'daemon-update') + ' center';
 
+    const os_update_ct_full_class = (this._showCardName == false ? 'os-update-ct-full-notitle' : 'os-update-ct-full') + ' center';
+    const os_update_ct_class = (this._showCardName == false ? 'os-update-ct-notitle' : 'os-update-ct') + ' center';
+
     if (this._showFullCard) {
       // our FULL card
       const fullRows = this._generateFullsizeCardRows();
@@ -476,8 +485,9 @@ export class RPiMonitorCard extends LitElement {
           <div id="states" class="card-content">
             ${fullRows}
             <div id=${Constants.kCSSClassIdCardAge} class=${last_heard_full_class}>${card_timestamp}</div>
-            <div id=${Constants.kCSSClassIdOSName} class=${os_name_full_class}>${ux_release}</div>
+            <div id=${Constants.kCSSClassIdOSName} class=${os_name_full_class}>${this._ux_release_name}</div>
             <div id=${Constants.kCSSClassIdDaemonUpd} class=${daemon_update_full_class}>${daemon_update_status}</div>
+            <div id=${Constants.kCSSClassIdUpdCount} class=${os_update_ct_full_class}>${os_update_ct_status}</div>
           </div>
         </ha-card>
       `;
@@ -503,8 +513,9 @@ export class RPiMonitorCard extends LitElement {
           <div class="glance-content">
             ${glanceRows}
             <div id=${Constants.kCSSClassIdCardAge} class=${last_heard_class}>${card_timestamp}</div>
-            <div id=${Constants.kCSSClassIdOSName} class=${os_name_class}>${ux_release}</div>
+            <div id=${Constants.kCSSClassIdOSName} class=${os_name_class}>${this._ux_release_name}</div>
             <div id=${Constants.kCSSClassIdDaemonUpd} class=${daemon_update_class}>${daemon_update_status}</div>
+            <div id=${Constants.kCSSClassIdUpdCount} class=${os_update_ct_class}>${os_update_ct_status}</div>
           </div>
         </ha-card>
       `;
@@ -560,11 +571,10 @@ export class RPiMonitorCard extends LitElement {
 
         if (changedProps.has('hass')) {
           // update common label(s)
-          const ux_release: string = this._getAttributeValueForKey(Constants.RPI_NIX_RELEASE_KEY);
-          let rlsNameColor = this.colorHelpers.calculateOsReleaseColor(ux_release, this._config.os_age);
+          let rlsNameColor = this.colorHelpers.calculateOsReleaseColor(this._ux_release_name, this._config.os_age);
           let labelElement = root.getElementById(Constants.kCSSClassIdOSName);
           if (labelElement) {
-            if (intervalColor == '') {
+            if (rlsNameColor == '') {
               rlsNameColor = this._getDefaultTextColor(labelElement);
             }
             labelElement.style.setProperty('color', rlsNameColor);
@@ -574,10 +584,20 @@ export class RPiMonitorCard extends LitElement {
           let daemonUpdColor = this.colorHelpers.calculateDaemonUpdateVersionColor(this._currentDaemonVersion, this._latestDaemonVersions);
           labelElement = root.getElementById(Constants.kCSSClassIdDaemonUpd);
           if (labelElement) {
-            if (intervalColor == '') {
+            if (daemonUpdColor == '') {
               daemonUpdColor = this._getDefaultTextColor(labelElement);
             }
             labelElement.style.setProperty('color', daemonUpdColor);
+          }
+
+          // apply color if RPi OS Updates should be updated
+          let osUpdateColor = this.colorHelpers.calculateOsUpdateCountColor(this._os_update_count, this._config.os_update_severity);
+          labelElement = root.getElementById(Constants.kCSSClassIdUpdCount);
+          if (labelElement) {
+            if (osUpdateColor == '') {
+              osUpdateColor = this._getDefaultTextColor(labelElement);
+            }
+            labelElement.style.setProperty('color', osUpdateColor);
           }
 
           if (this._showFullCard) {
@@ -737,6 +757,15 @@ export class RPiMonitorCard extends LitElement {
         this._hostname = this._configEntityId ? this._configEntityId : '-not-set-';
       }
     }
+  }
+
+  private _computeOsUpdCountMessage(os_upd_ct: string): string {
+    // Ex 22 -> upd(22)
+    let updateStatusMessage: string = '';
+    if (os_upd_ct != '' && os_upd_ct != '0') {
+      updateStatusMessage = 'upd(' + os_upd_ct + ')';
+    }
+    return updateStatusMessage;
   }
 
   private _computeDaemonUpdMessage(currentReporterVersion: string): string {
@@ -1249,6 +1278,34 @@ export class RPiMonitorCard extends LitElement {
         position: absolute;
         bottom: 5px;
         right: 37%;
+        font-size: 12px;
+        color: var(--primary-text-color);
+      }
+      .os-update-ct-full {
+        position: absolute;
+        top: 45px;
+        left: 27%;
+        font-size: 12px;
+        color: var(--primary-text-color);
+      }
+      .os-update-ct {
+        position: absolute;
+        top: 55px;
+        left: 27%;
+        font-size: 12px;
+        color: var(--primary-text-color);
+      }
+      .os-update-ct-full-notitle {
+        position: absolute;
+        top: 3px;
+        left: 27%;
+        font-size: 12px;
+        color: var(--primary-text-color);
+      }
+      .os-update-ct-notitle {
+        position: absolute;
+        bottom: 5px;
+        left: 37%;
         font-size: 12px;
         color: var(--primary-text-color);
       }

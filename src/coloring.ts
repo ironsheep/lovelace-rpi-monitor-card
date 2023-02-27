@@ -105,6 +105,45 @@ export class ColorUtils {
     },
   ];
 
+  // DEFAULT coloring for used count of OS updates
+  //  user sets 'os_update_severity' to override
+  private _colorOsUpdateCountDefault = [
+    {
+      color: 'red',
+      from: 100,
+      to: 10000,
+    },
+    {
+      color: 'orange',
+      from: 25,
+      to: 99,
+    },
+    {
+      color: 'default',
+      from: 0,
+      to: 24,
+    },
+  ];
+  /*  TEST  REMOVE BEFORE FLIGHT
+  private _colorOsUpdateCountDefault = [
+    {
+      color: 'red',
+      from: 22,
+      to: 10000,
+    },
+    {
+      color: 'orange',
+      from: 15,
+      to: 21,
+    },
+    {
+      color: 'default',
+      from: 0,
+      to: 14,
+    },
+  ];
+  */
+
   // DEFAULT coloring for named releases
   // intent is to show which ones are aging and should no longer be used
   //  user sets 'os_age' to override
@@ -200,7 +239,7 @@ export class ColorUtils {
     const numberValue = Number(value);
     const sections = fs_severity ? fs_severity : this._colorUsedSpaceDefault;
 
-    //console.log('color-table: sections=[' + _colorUsedMemoryDefault + ']');
+    //console.log('color-table: sections=[' + _colorUsedSpaceDefault + ']');
     //return '';
 
     let color: undefined | string;
@@ -246,6 +285,33 @@ export class ColorUtils {
     }
     if (this._showColorDebug) {
       const logMessage = '_calculateMemoryUsageColor() - value=[' + value + '] returns(color=' + color + ')';
+      console.log(logMessage);
+    }
+
+    if (color == undefined || color == 'default') color = '';
+    return color;
+  }
+
+  public calculateOsUpdateCountColor(value: string, os_update_severity: ColorRange[] | undefined): string {
+    const numberValue = Number(value);
+    const sections = os_update_severity ? os_update_severity : this._colorOsUpdateCountDefault;
+
+    let color: undefined | string;
+
+    if (!isNaN(numberValue)) {
+      sections.forEach((section) => {
+        if (numberValue >= section.from && numberValue <= section.to) {
+          color = section.color;
+          if (this._showColorDebug) {
+            const logMessage =
+              'calculateOsUpdateCountColor() - value=[' + value + '] matched(from=' + section.from + ', to=' + section.to + ', color=' + color + ')';
+            console.log(logMessage);
+          }
+        }
+      });
+    }
+    if (this._showColorDebug) {
+      const logMessage = 'calculateOsUpdateCountColor() - value=[' + value + '] returns(color=' + color + ')';
       console.log(logMessage);
     }
 

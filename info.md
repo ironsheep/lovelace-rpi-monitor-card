@@ -34,22 +34,26 @@ If you don't use HACS please change the url accordingly.
 
 ## Configuration
 
-| Name            | Type    | Default            | Description                                                                           |
-| --------------- | ------- | ------------------ | ------------------------------------------------------------------------------------- |
-| type            | string  | **Required**       | `custom:rpi-monitor-card`                                                             |
-| entity          | string  | **Required**       | Entity State                                                                          |
-| name            | string  | none               | Overrides default title of the card. (Default: RPi Monitor {FQDN})                    |
-| name_prefix     | string  | 'RPi monitor'      | Overrides default name prefix(Default: 'RPi Monitor')                                 |
-| card_style      | string  | 'glance' or 'full' | Card layout desired for this RPi. (Default is full)                                   |
-| temp_scale      | string  | 'C' or 'F'         | Show Temperature in Celsius (C) or Fahrenheit (F). (Default is C)                     |
-| fs_severity     | object  | none               | A list of severity values. See [Severity Coloring](#severity-coloring).               |
-| temp_severity   | object  | none               | A list of severity values. See [Severity Coloring](#severity-coloring).               |
-| memory_severity | object  | none               | A list of severity values. See [Severity Coloring](#severity-coloring).               |
-| os_age          | object  | none               | A list of os name and color values. See [OS Coloring](#os-coloring).                  |
-| show_title      | boolean | true               | Show / hide the Title for this card. (Default is show - 'true')                       |
-| show_os_age     | boolean | true               | Show / hide the os release name (Default is show - 'true')                            |
-| show_update_age | boolean | true               | Show / hide time since last values reported for this card. (Default is show - 'true') |
-| show_daemon_upd | boolean | true               | Show / hide Daemon update needed flag. (Default is show - 'true')                     |
+If you wish to override some of the built-in coloring or display of titles/values, etc. The following adjustments are available for you to use.
+
+| Name              | Type    | Default            | Description                                                                           |
+| ----------------- | ------- | ------------------ | ------------------------------------------------------------------------------------- |
+| type              | string  | **Required**       | `custom:rpi-monitor-card`                                                             |
+| entity            | string  | **Required**       | Entity State                                                                          |
+| name              | string  | none               | Overrides default title of the card. (Default: RPi Monitor {FQDN})                    |
+| name_prefix       | string  | 'RPi monitor'      | Overrides default name prefix(Default: 'RPi Monitor')                                 |
+| card_style        | string  | 'glance' or 'full' | Card layout desired for this RPi. (Default is full)                                   |
+| temp_scale        | string  | 'C' or 'F'         | Show Temperature in Celsius (C) or Fahrenheit (F). (Default is C)                     |
+| fs_severity       | object  | none               | A list of severity values. See [Severity Coloring](#severity-coloring).               |
+| temp_severity     | object  | none               | A list of severity values. See [Severity Coloring](#severity-coloring).               |
+| memory_severity   | object  | none               | A list of severity values. See [Severity Coloring](#severity-coloring).               |
+| os_age            | object  | none               | A list of os name and color values. See [OS Coloring](#os-coloring).                  |
+| os\_update_severity | object | none              | A list of update count values. See [Severity Options](#severity-options). |
+| show_title        | boolean | true               | Show / hide the Title for this card. (Default is show - 'true')                       |
+| show\_os_age       | boolean | true               | Show / hide the os release name (Default is show - 'true')                            |
+| show\_update_age   | boolean | true               | Show / hide time since last values reported for this card. (Default is show - 'true') |
+| show\_daemon_upd   | boolean | true               | Show / hide Daemon update needed flag. (Default is show - 'true')                     |
+| show\_os\_upd_count | boolean | true               | Show / hide count of os updates pending. (Default is show - 'true')                   |
 
 ### Threashold Monitoring
 
@@ -61,15 +65,15 @@ The default coloring is
 | ------------------ | ---- | --- |
 | **Storage Used** % |      |     |
 | default            | 0    | 60  |
-| yellow             | 61   | 85  |
+| orange             | 61   | 85  |
 | red                | 86   | 100 |
 | **Temperature** C  |      |     |
 | default            | 0    | 59  |
-| yellow             | 60   | 79  |
+| orange             | 60   | 79  |
 | red                | 80   | 100 |
 | **Memory Used %**  |      |     |
 | default            | 0    | 60  |
-| yellow             | 61   | 74  |
+| orange             | 61   | 74  |
 | red                | 75   | 100 |
 
 The OS release name is also colored by expiration of support. The following defaults can be overridden for each card (each RPi.) with `red` meaning the named released is no longer supported / is not getting updates any longer.
@@ -89,9 +93,20 @@ The default release coloring is
 
 The Daemon update needed flag is colored according to version being run vs. the latest release. If the version being run is one back from the latest, the update is colored yellow. If current version is not in the list of most recent versions then it update is colored red. There is currently no override for this coloring.
 
-### Severity Coloring
+### Count of Pending OS Updates coloring
 
-Use the following format to override either/or both of 'space used' and 'system temperature' values.
+The number of pending OS updates value is colored by threshold. The following defaults can be overridden for each card (each RPi.)
+
+The default coloring is
+
+| **Value**/color         | from | to    |
+| ----------------------- | ---- | ----- |
+| **Nbr Updates Pending** |      |       |
+| default                 | 0    | 24    |
+| orange                  | 25   | 99    |
+| red                     | 100  | 10000 |
+
+### Severity Coloring
 
 | Name  | Type   | Default      | Description                                             |
 | ----- | ------ | ------------ | ------------------------------------------------------- |
@@ -108,13 +123,13 @@ Use the following format to override either/or both of 'space used' and 'system 
 
 ### Example card specifications
 
-**NOTE**: this card must always be attached to the 'sensor.rpi-monitor-{hostname}' sensor, **the other two sensors from the same RPi will not work to drive this card!**
+**NOTE**: this card must always be attached to the 'sensor.rpi*monitor*{hostname}' sensor, **the other sensors from the same RPi will not work to drive this card!**
 
 A 'glance' card example
 
 ```yaml
 type: 'custom:rpi-monitor-card'
-entity: sensor.rpi-monitor-hostname
+entity: sensor.rpi_monitor_hostname
 card_style: glance
 temp_scale: f
 ```
@@ -123,7 +138,7 @@ A 'full' card example (_with additional coloring override example_)
 
 ```yaml
 type: 'custom:rpi-monitor-card'
-entity: sensor.rpi-monitor-hostname
+entity: sensor.rpi_monitor_hostname
 card_style: full
 temp_scale: C
 fs_severity:
@@ -137,6 +152,47 @@ fs_severity:
     from: 51
     to: 100
 ```
+
+### Example monitoring of specific attributes
+
+While we have the **Glance** and **Full** layout cards, you may wish to monitor other values. Here's an example of monitoring the RPi CPU Throttling that can occur or viewing the active network interfaces. Add the sensor(s) as follows:
+
+```yaml
+ - type: attribute
+    entity: sensor.rpi_monitor_hostname
+    attribute: throttle
+    name: Throttle status
+```
+
+or...
+
+```yaml
+ - type: attribute
+    entity: sensor.rpi_monitor_hostname
+    attribute: networking
+    name: Network
+```
+
+
+(_Thanks to gihub user @bsimmo for provinding this example._)
+
+### Example control of your RPi (avail. in Daemon v1.8.0 and later)
+
+From v1.8.0 and later of the RPi Reporter MQTT2HA Daemon we can enable control over our RPi.
+We can then expose buttons offering this control with something like:
+
+```yaml
+- type: entities
+  entities:
+    - entity: button.rpi_command_hostname_reboot
+      name: Reboot hostname
+    - entity: button.rpi_command_hostname_restart_service
+      name: Restart Service hostname
+    - entity: button.rpi_command_hostname_shutdown
+      name: Shutdown hostname
+  title: RPi-hostname.home
+```
+
 
 ---
 
