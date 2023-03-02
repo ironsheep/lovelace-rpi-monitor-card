@@ -25,18 +25,19 @@ Place one of these cards for each of your RPi's on your network (and install the
 All of the card forms (as seen above) now have a row of RPi health indicators. With these indicators you can tell:
 
 - If the RPi OS has reached [end of support](https://en.wikipedia.org/wiki/Debian_version_history) (no longer getting security updates) so it probably should be updated
+- OS package updates are available
 - If a new version of the RPi reporter Daemon is avaialble for install
 - When the data shown on the card was last updated
 
 <p align="center">
-  <img src="./DOCs/images/newIndicators.png" width="500">
+  <img src="./DOCs/images/newIndicatorsV2.png" width="500">
 </p>
 
 ---
 
-If you like my work and/or this has helped you in some way then feel free to help me out for a couple of :coffee:'s or :pizza: slices!
-
-[![coffee](https://www.buymeacoffee.com/assets/img/custom_images/black_img.png)](https://www.buymeacoffee.com/ironsheep)
+> If you like my work and/or this has helped you in some way then feel free to help me out for a couple of :coffee:'s or :pizza: slices!  Or you can support my work via Patreon!
+>
+> [![coffee](https://www.buymeacoffee.com/assets/img/custom_images/black_img.png)](https://www.buymeacoffee.com/ironsheep) &nbsp;&nbsp; -OR- &nbsp;&nbsp; [![Patreon](./Docs/images/patreon.png)](https://www.patreon.com/IronSheep?fan_landing=true)[Patreon.com/IronSheep](https://www.patreon.com/IronSheep?fan_landing=true)
 
 ---
 

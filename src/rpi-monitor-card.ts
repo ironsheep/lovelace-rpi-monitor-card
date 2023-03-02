@@ -67,7 +67,7 @@ export class RPiMonitorCard extends LitElement {
   private _hostname: string = '';
   private _showFullCard: boolean = true;
   private _useTempsInC: boolean = true;
-  private _latestDaemonVersions: string[] = ['v1.8.1', 'v1.6.1']; // REMOVE BEFORE FLIGHT (TEST DATA)
+  private _latestDaemonVersions: string[] = ['v1.8.3', 'v1.6.1']; // REMOVE BEFORE FLIGHT (TEST DATA)
   private _currentDaemonVersion: string = '';
   private _cardMinutesSinceUpdate: number = 0;
   private _defaultTextColor: string = '';
@@ -434,6 +434,14 @@ export class RPiMonitorCard extends LitElement {
       this._cardMinutesSinceUpdate = this._calculateRelativeMinutesSinceUpdate();
       if (this._cardMinutesSinceUpdate == 0) {
         cardUpdateString = 'just now';
+      } else if (this._cardMinutesSinceUpdate >= 1440) {
+        const dayCt: number = Math.round(this._cardMinutesSinceUpdate / 1440);
+        const suffix = dayCt == 1 ? '' : 's';
+        cardUpdateString = dayCt + ' day' + suffix + ' ago';
+      } else if (this._cardMinutesSinceUpdate >= 60) {
+        const hourCt: number = Math.round(this._cardMinutesSinceUpdate / 60);
+        const suffix = hourCt == 1 ? '' : 's';
+        cardUpdateString = hourCt + ' hour' + suffix + ' ago';
       } else {
         const suffix = this._cardMinutesSinceUpdate == 1 ? '' : 's';
         cardUpdateString = this._cardMinutesSinceUpdate + ' min' + suffix + ' ago';
@@ -761,8 +769,9 @@ export class RPiMonitorCard extends LitElement {
 
   private _computeOsUpdCountMessage(os_upd_ct: string): string {
     // Ex 22 -> upd(22)
+    // if value is 0, empty string '', or '-1' then don't show value
     let updateStatusMessage: string = '';
-    if (os_upd_ct != '' && os_upd_ct != '0') {
+    if (os_upd_ct != '' && os_upd_ct != '0' && os_upd_ct != '-1') {
       updateStatusMessage = 'upd(' + os_upd_ct + ')';
     }
     return updateStatusMessage;

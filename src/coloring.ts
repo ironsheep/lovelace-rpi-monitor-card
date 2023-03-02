@@ -81,7 +81,7 @@ export class ColorUtils {
     {
       color: 'red',
       from: 6,
-      to: 100,
+      to: 1000000,
     },
   ];
 
