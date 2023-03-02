@@ -1,12 +1,14 @@
 import * as en from './languages/en.json';
 import * as nb from './languages/nb.json';
 import * as es from './languages/es.json';
+import * as de from './languages/de.json';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const languages: any = {
   en: en,
   es: es,
   nb: nb,
+  de: de,
 };
 
 // eslint-disable-next-line @typescript-eslint/no-inferrable-types

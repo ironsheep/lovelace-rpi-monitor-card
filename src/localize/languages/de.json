@@ -1,0 +1,8 @@
+{
+  "common": {
+    "version": "Ausführung",
+    "invalid_configuration": "Ungültige Konfiguration",
+    "show_warning": "Warnung anzeigen",
+    "show_error": "Fehler anzeigen"
+  }
+}

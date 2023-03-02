@@ -1,6 +1,6 @@
 {
   "common": {
-    "version": "Version",
+    "version": "versión",
     "invalid_configuration": "configuración no válida",
     "show_warning": "Mostrar advertencia",
     "show_error": "Mostrar error"
