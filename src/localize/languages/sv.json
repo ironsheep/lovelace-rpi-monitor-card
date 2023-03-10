@@ -1,0 +1,8 @@
+{
+  "common": {
+    "version": "Version",
+    "invalid_configuration": "Ogiltig konfiguration",
+    "show_warning": "Visa Varning",
+    "show_error": "Visa Fel"
+  }
+}
