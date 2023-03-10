@@ -2,6 +2,7 @@ import * as en from './languages/en.json';
 import * as nb from './languages/nb.json';
 import * as es from './languages/es.json';
 import * as de from './languages/de.json';
+import * as sv from './languages/sv.json';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const languages: any = {
@@ -9,6 +10,7 @@ const languages: any = {
   es: es,
   nb: nb,
   de: de,
+  sv: sv,
 };
 
 // eslint-disable-next-line @typescript-eslint/no-inferrable-types
