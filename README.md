@@ -55,9 +55,21 @@ In your ui-lovelace.yaml (or resources.yaml, whichever you use for resources) ad
 
 If you don't use HACS please change the url accordingly.
 
+To add RPi Monitor Card to your dashboard, click `ADD CARD` and search for `RPi Monitor Card`. Next you need to click `SHOW CODE EDITOR` to set at least the following entries:
+
+```
+type: custom:rpi-monitor-card
+entity: sensor.your-raspberry-pi-monitor
+```
+
+**NOTE**: the entity must point to `sensor.rpi*monitor*{hostname}` sensor, **the other sensors from the same RPi will not work to drive this card!**
+
+See more configuration options and examples below.
+
+
 ## Configuration
 
-If you wish to override some of the built-in coloring or display of titles/values, etc. The following adjustments are available for you to use.
+Configuration options for RPi Monitor Card. Those options also allow you to override some of the built-in coloring or display of titles/values, severities etc. 
 
 | Name              | Type    | Default            | Description                                                                           |
 | ----------------- | ------- | ------------------ | ------------------------------------------------------------------------------------- |
@@ -78,7 +90,7 @@ If you wish to override some of the built-in coloring or display of titles/value
 | show\_daemon_upd   | boolean | true               | Show / hide Daemon update needed flag. (Default is show - 'true')                     |
 | show\_os\_upd_count | boolean | true               | Show / hide count of os updates pending. (Default is show - 'true')                   |
 
-### Threashold Monitoring
+### Threshold Monitoring
 
 The `system temperature`, `disk space used` and `memory used` values & icons are colored by threshold. The following defaults can be overridden for each card (each RPi.)
 
@@ -146,7 +158,7 @@ The default coloring is
 
 ### Example card specifications
 
-**NOTE**: this card must always be attached to the 'sensor.rpi*monitor*{hostname}' sensor, **the other sensors from the same RPi will not work to drive this card!**
+**NOTE**: this card must always be attached to the `sensor.rpi*monitor*{hostname}` sensor, **the other sensors from the same RPi will not work to drive this card!**
 
 A 'glance' card example
 
