@@ -1,8 +1,8 @@
 {
   "common": {
     "version": "Verzia",
-    "invalid_configuration": "Chybná konfigurácia",
-    "show_warning": "Zobraziť upozornenia",
-    "show_error": "Zobraziť errory"
+    "invalid_configuration": "Neplatná konfigurácia",
+    "show_warning": "Zobraziť varovanie",
+    "show_error": "Zobraziť chybu"
   }
 }
